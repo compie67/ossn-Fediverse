@@ -1,73 +1,48 @@
-# ossn-Fediverse
-connect OSSN with Fediverse to post public message overthere
+🇳🇱 FediverseBridge voor OSSN – Uitleg
+FediverseBridge is een OSSN-module die gebruikers van jouw sociale netwerk (zoals nlsociaal.nl) koppelt aan het bredere Fediverse – het gedecentraliseerde netwerk van Mastodon, Friendica, Pleroma en meer.
 
-90% done, post the code here for feedback. and explain the working
+✨ Wat doet deze module?
+👤 Gebruikers kunnen opt-in kiezen via hun profielinstellingen.
 
-live!!!! and testing at shadow.nlsociaal.nl with user testsociaal and admin
+🔐 De module genereert per gebruiker automatisch RSA-sleutels en een Fediverse-identiteit (@gebruikersnaam@jouwdomein.nl).
 
-✨ FediverseBridge for OSSN – From Friction to Federation
-FediverseBridge is a component built for Open Source Social Network (OSSN) that connects user posts containing hashtags (#) directly to the Fediverse using the ActivityPub protocol.
+📝 Elke OSSN-wallpost met een hashtag (#) wordt automatisch doorgestuurd naar de volgers op het Fediverse via het ActivityPub-protocol.
 
-🛠 The Idea
-The core concept:
+💬 Replies en likes vanaf bijvoorbeeld Mastodon worden ontvangen en getoond in het profiel van de gebruiker.
 
-When a user posts a message with a hashtag (e.g. #fediverse), that post should also be shared with their followers on Mastodon, Friendica, etc.
+✅ Een Follow wordt automatisch beantwoord met een Accept, en de actor wordt opgeslagen in een followers.json bestand.
 
-No bots. No algorithms. Just real people, real reach.
+📂 Berichten worden opgeslagen in ossn_data/components/FediverseBridge/outbox/gebruikersnaam/.
 
-🔁 The Road to Success
-😤 The Struggles
-ActivityPub is complex — especially the cryptographic signing of HTTP headers.
+🔐 Veilig en decentraal
+Gebruikers kunnen zich op elk moment afmelden.
 
-Mastodon has strict validations — posts must be signed per user, not globally.
+Er is geen centrale afhankelijkheid van externe API's of platforms.
 
-Initial attempts used a central admin key, but that led to HTTP 401 Unauthorized responses.
+Berichten zijn publiek, maar alleen opt-in gebruikers worden gefedereerd.
 
-Webfinger discovery had to be precise — even a missing trailing slash or mismatched host blocked federation.
+🇬🇧 FediverseBridge for OSSN – Overview
+FediverseBridge is an OSSN module that connects your social network (e.g. nlsociaal.nl) to the broader Fediverse — the decentralized network of Mastodon, Friendica, Pleroma, and others.
 
-Sloppy inbox URLs (like inbox//) caused silent failures.
+✨ What does this module do?
+👤 Users can opt in via their profile settings.
 
-Accepting followers wasn't enough — the correct Accept activity with proper signature had to be returned.
+🔐 Upon opt-in, the module generates RSA keys and a Fediverse identity (@username@yourdomain.nl) for the user.
 
-💥 The Breakthroughs
-Per-user keypair generation: When users opt in (via checkbox at registration or later), their own private.pem and public.pubkey are generated.
+📝 Any OSSN wall post containing a hashtag (#) is automatically published to the user’s Fediverse followers using the ActivityPub protocol.
 
-Outbox management: Posts with hashtags are saved as JSON ActivityPub objects in a per-user outbox.
+💬 Replies and likes from platforms like Mastodon are received and displayed in the user’s profile.
 
-Inbox handling: Follows from Mastodon are accepted and stored in a followers.json list.
+✅ Any Follow is responded to with an Accept, and the actor is saved in a followers.json file.
 
-Post delivery: Each wall post triggers a Create activity to all known inboxes using per-user signatures.
+📂 Posts are saved in ossn_data/components/FediverseBridge/outbox/username/.
 
-Test success: Posts now arrive in Mastodon timelines when the user is followed — fully decentralized.
+🔐 Secure and decentralized
+Users can opt out at any time.
 
-✅ The Current Flow
-User signs up, optionally checks a box “also publish to Fediverse”.
+No dependency on third-party APIs or services.
 
-If enabled:
-
-Keypair is created
-
-User is discoverable via Webfinger
-
-User writes a post with a hashtag →
-#nlsociaal is awesome!
-
-Post is:
-
-Stored locally
-
-Encoded to ActivityPub format
-
-Signed with the user’s private key
-
-Sent to all known followers’ inboxes
-
-🚧 Still To Come
-Admin UI to see Fediverse logs and user keys
-
-Allow users to enable/disable Fediverse sharing post-signup
-
-Handle replies, boosts, deletes
+Posts are public, but only opted-in users are federated.
 
 🌍 Why It Matters
 This project bridges OSSN to the larger Fediverse — making nlsociaal.nl a real player in the decentralized web.
