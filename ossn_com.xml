@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+🇳🇱 OSSN Component XML-definitie 
+🇬🇧 OSSN Component XML Definition
+
+📦 Component: FediverseBridge
+👨‍💻 Auteur / Author: Eric Redegeld
+🌐 Platform: nlsociaal.nl
+🧩 Doel / Purpose: Federatief delen van wall-posts met hashtags via één centraal account (@sitenaam)
+⚠️ Vereist minimaal OSSN 6.6 (voor hooks & metadata)
+-->
+
+<component xmlns="http://www.opensource-socialnetwork.org/v/3.0">
+  <!-- 🇳🇱 Unieke ID van de component / 🇬🇧 Unique component ID -->
+  <id>FediverseBridge</id>
+
+  <!-- 🇳🇱 Weergavenaam in OSSN beheer / 🇬🇧 Display name in OSSN admin panel -->
+  <name>Fediverse connect</name>
+
+  <!-- 🇳🇱 Beschrijving / 🇬🇧 Description -->
+  <description>
+    🇳🇱 Publiceert hashtags-berichten van gebruikers via opt-in, namens @sitenaam  
+    🇬🇧 Publishes user wall posts with hashtags via opt-in, under central account @sitename
+  </description>
+
+  <!-- 🇳🇱 Versie / 🇬🇧 Version -->
+  <version>1.0</version>
+
+  <!-- 🇳🇱 Auteur / 🇬🇧 Author -->
+  <author>Eric Redegeld</author>
+
+  <!-- 🇳🇱 Licentie / 🇬🇧 License -->
+  <license>GPLv2</license>
+
+  <!-- 🇳🇱 Minimale OSSN versie vereist / 🇬🇧 Required minimum OSSN version -->
+  <requires>
+    <type>ossn_version</type>
+    <version>6.6</version>
+  </requires>
+
+  <!-- 🇳🇱 Initialisatiebestand bij activeren / 🇬🇧 File executed on enable -->
+  <enable>enable.php</enable>
+</component>
