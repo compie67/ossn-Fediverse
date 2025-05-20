@@ -7,11 +7,20 @@
  * Door Eric Redegeld – nlsociaal.nl
  */
 
+if (!ossn_isLoggedIn()) {
+    ossn_error_page(); // Alleen ingelogden
+}
+
 $user = $params['user'];
 $username = $user->username;
+$viewer = ossn_loggedin_user();
 
-// 📁 Bepaal alle relevante padlocaties voor deze gebruiker
-// 📁 Determine all relevant paths for this user
+// 🔐 Alleen eigen profiel of admin
+if (!$viewer || ($viewer->guid !== $user->guid && !ossn_isAdminLoggedin())) {
+    ossn_error_page();
+}
+
+// 📁 Padconfiguratie
 $base_path      = ossn_get_userdata("components/FediverseBridge");
 $optin_file     = "{$base_path}/optin/{$username}.json";
 $private_file   = "{$base_path}/private/{$username}.pem";
@@ -20,6 +29,7 @@ $outbox_dir     = "{$base_path}/outbox/{$username}/";
 $inbox_dir      = "{$base_path}/inbox/{$username}/";
 $followers_file = "{$base_path}/followers/{$username}.json";
 $actor_url      = ossn_site_url("fediverse/actor/{$username}");
+$domain         = parse_url(ossn_site_url(), PHP_URL_HOST);
 
 $optedin = file_exists($optin_file);
 
@@ -27,30 +37,26 @@ if (function_exists('fediversebridge_log')) {
     fediversebridge_log("👤 Opt-in scherm geopend voor {$username}");
 }
 
-// 📝 Verwerk formulier POST
+// 📝 Verwerk formulier
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $wilt_optin = input('fediverse_optin') === 'yes';
 
     if ($wilt_optin && !$optedin) {
-        // 🗂️ Mappen aanmaken
         foreach ([dirname($optin_file), dirname($private_file), $outbox_dir] as $path) {
             if (!is_dir($path)) mkdir($path, 0755, true);
         }
 
-        // 🔐 Sleutelpaar genereren
         $res = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
         openssl_pkey_export($res, $privout);
         file_put_contents($private_file, $privout);
         $pubout = openssl_pkey_get_details($res);
         file_put_contents($public_file, $pubout['key']);
 
-        // ✅ Opt-in JSON opslaan
         file_put_contents($optin_file, json_encode([
             'enabled' => true,
             'actor_url' => $actor_url,
         ]));
 
-        // 📢 Welkomstbericht publiceren
         $now = date('c');
         $note = [
             '@context' => 'https://www.w3.org/ns/activitystreams',
@@ -58,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'type' => 'Note',
             'attributedTo' => $actor_url,
             'to' => ['https://www.w3.org/ns/activitystreams#Public'],
-            'content' => "👋 Hallo Fediverse! Ik ben {$username} op shadow.nlsociaal.nl.",
+            'content' => "👋 Hallo Fediverse! Ik ben {$username} op {$domain}.",
             'published' => $now,
         ];
 
@@ -75,9 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         file_put_contents("{$outbox_dir}/first.json", json_encode($activity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         fediversebridge_log("✅ Opt-in + sleutels + eerste bericht aangemaakt voor {$username}");
         ossn_trigger_message("✅ Fediverse deelname ingeschakeld voor {$username}", 'success');
-
     } elseif (!$wilt_optin && $optedin) {
-        // 🧹 Verwijder opt-in + keys + outbox
         if (file_exists($optin_file)) unlink($optin_file);
         if (file_exists($private_file)) unlink($private_file);
         if (file_exists($public_file)) unlink($public_file);
@@ -93,7 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<!-- 👤 UI Weergave -->
 <div class="ossn-profile-extra-menu fediverse-optin-page">
     <h3>Fediverse</h3>
 
@@ -116,7 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="submit" class="btn btn-primary" value="Opslaan" />
     </form>
 
-    <!-- 🔧 Debug info -->
     <pre style="background:#eee;padding:5px;margin-top:10px;">
 [DEBUG]
 Username: <?php echo $username; ?>
@@ -128,8 +130,19 @@ Opt-in json: <?php echo file_exists($optin_file) ? 'OK' : 'MISSING'; ?>
 User GUID: <?php echo $user->guid; ?>
     </pre>
 
+    <div style="background: #f0f8ff; padding: 15px; border: 1px solid #a1c4e7; margin-top: 20px; border-radius: 5px;">
+        <h4>🔗 Vindbaar op het Fediverse</h4>
+        <p><strong>@<?php echo $username; ?>@<?php echo $domain; ?></strong></p>
+        <p><a href="<?php echo $actor_url; ?>" target="_blank"><?php echo $actor_url; ?></a></p>
+        <p>
+            🔎 WebFinger:<br />
+            <a href="https://<?php echo $domain; ?>/.well-known/webfinger?resource=acct:<?php echo $username; ?>@<?php echo $domain; ?>" target="_blank">
+                .well-known/webfinger?resource=acct:<?php echo $username; ?>@<?php echo $domain; ?>
+            </a>
+        </p>
+    </div>
+
     <?php
-    // 💬 Reacties (replies) tonen
     $replies = [];
 
     if (is_dir($inbox_dir)) {
@@ -162,7 +175,6 @@ User GUID: <?php echo $user->guid; ?>
         echo "</ul>";
     }
 
-    // 👥 Volgers tonen
     if (file_exists($followers_file)) {
         $followers = json_decode(file_get_contents($followers_file), true);
         if (is_array($followers) && !empty($followers)) {
