@@ -31,6 +31,8 @@ function fediversebridge_init() {
     ossn_register_page('fediverse', 'fediversebridge_ossn_style_handler');
     ossn_register_page('well-known', 'fediversebridge_wellknown_handler');
     ossn_register_page('fediverse-admin', 'fediversebridge_admin_handler');
+      // CSS toevoegen aan admin
+    ossn_extend_view('ossn/admin/head', 'css/fediversebridge');
 
     ossn_register_callback('wall', 'post:created', 'fediversebridge_wall_post_to_fediverse');
 }
