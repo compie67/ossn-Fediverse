@@ -1,3 +1,9 @@
+With your help, i make more cool modules
+https://buy.stripe.com/6oE6pS1V2eie0p27ss
+
+
+
+
 🇳🇱 FediverseBridge voor OSSN – Uitleg
 FediverseBridge is een OSSN-module die gebruikers van jouw sociale netwerk (zoals nlsociaal.nl) koppelt aan het bredere Fediverse – het gedecentraliseerde netwerk van Mastodon, Friendica, Pleroma en meer.
 
