@@ -7,12 +7,9 @@
  * Gemaakt door Eric Redegeld voor nlsociaal.nl
  */
 
-// 📄 Stel de juiste Content-Type in
-// 📄 Set proper content type for ActivityPub JSON
 header('Content-Type: application/activity+json');
 
 // 🔍 Haal gebruikersnaam uit URL-segment: /fediverse/actor/{username}
-// 🔍 Extract username from FediversePages global
 $username = $GLOBALS['FediversePages'][1] ?? null;
 if (!$username) {
     http_response_code(404);
@@ -21,7 +18,6 @@ if (!$username) {
 }
 
 // 🔐 Haal gebruiker op via OSSN API
-// 🔐 Get user object using OSSN helper
 $user = ossn_user_by_username($username);
 if (!$user) {
     http_response_code(404);
@@ -29,20 +25,14 @@ if (!$user) {
     return;
 }
 
-// 🌐 Basis URL van de site
-// 🌐 Base site URL
 $site = ossn_site_url();
-
-// 📌 URLs voor actor onderdelen
-// 📌 URLs for actor components
 $actor_id    = "{$site}fediverse/actor/{$username}";
 $inbox       = "{$site}fediverse/inbox/{$username}";
 $outbox      = "{$site}fediverse/outbox/{$username}";
 $followers   = "{$site}fediverse/followers/{$username}";
 $profile_url = "{$site}u/{$username}";
 
-// 🔑 Haal publieke sleutel op uit /private
-// 🔑 Fetch public key from disk
+// 🔑 Publieke sleutel ophalen
 $public_key_file = ossn_get_userdata("components/FediverseBridge/private/{$username}.pubkey");
 if (!file_exists($public_key_file)) {
     http_response_code(500);
@@ -51,8 +41,7 @@ if (!file_exists($public_key_file)) {
 }
 $pubkey = trim(file_get_contents($public_key_file));
 
-// 📦 Bouw het ActivityPub actor-profiel volgens de specificatie
-// 📦 Construct ActivityPub actor object
+// 📦 Actor-profiel bouwen
 $actor = [
     '@context' => [
         'https://www.w3.org/ns/activitystreams',
@@ -61,27 +50,38 @@ $actor = [
     'id' => $actor_id,
     'type' => 'Person',
     'preferredUsername' => $username,
-    'name' => "{$user->first_name} {$user->last_name}", // 🧑 Naam van gebruiker / Display name
-    'summary' => "Gebruiker van nlsociaal.nl",           // 📝 Korte beschrijving / Optional bio
+    'name' => "{$user->first_name} {$user->last_name}",
+    'summary' => "Gebruiker van nlsociaal.nl",
     'inbox' => $inbox,
     'outbox' => $outbox,
     'followers' => $followers,
-    'url' => $profile_url,                               // 🌐 Link naar OSSN-profielpagina
-    'manuallyApprovesFollowers' => false,                // ✅ Voor Mastodon compatibiliteit
-    'discoverable' => true,                              // 🔍 Vindbaar in zoekresultaten
+    'url' => $profile_url,
+    'manuallyApprovesFollowers' => false,
+    'discoverable' => true,
     'publicKey' => [
         'id' => "{$actor_id}#main-key",
         'owner' => $actor_id,
         'publicKeyPem' => $pubkey
-    ],
-    // 🖼️ Optioneel: Profielfoto (activeren als URL beschikbaar)
-    // 'icon' => [
-    //     'type' => 'Image',
-    //     'mediaType' => 'image/jpeg',
-    //     'url' => "{$site}path/naar/profielfoto.jpg"
-    // ]
+    ]
 ];
 
-// 📤 Stuur JSON-response
-// 📤 Output JSON-encoded actor object
+// 🖼️ Profielfoto instellen: standaard = fallback
+$icon_url = "{$site}components/FediverseBridge/images/default-avatar.jpg";
+
+// 🔍 Probeer bestaande OSSN-avatar te gebruiken
+$icon_path = ossn_get_userdata("user/{$user->guid}/profile/photo/");
+$icon_file = glob("{$icon_path}larger_*");
+
+if ($icon_file && file_exists($icon_file[0])) {
+    $filename = basename($icon_file[0]);
+    $icon_url = "{$site}avatar/{$username}/larger/{$filename}";
+}
+
+$actor['icon'] = [
+    'type' => 'Image',
+    'mediaType' => 'image/jpeg',
+    'url' => $icon_url
+];
+
+// 📤 JSON-response teruggeven
 echo json_encode($actor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
