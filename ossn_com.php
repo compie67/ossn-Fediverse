@@ -31,7 +31,7 @@ function fediversebridge_init() {
     ossn_register_page('fediverse', 'fediversebridge_ossn_style_handler');
     ossn_register_page('well-known', 'fediversebridge_wellknown_handler');
     ossn_register_page('fediverse-admin', 'fediversebridge_admin_handler');
-      // CSS toevoegen aan admin
+
     ossn_extend_view('ossn/admin/head', 'css/fediversebridge');
 
     ossn_register_callback('wall', 'post:created', 'fediversebridge_wall_post_to_fediverse');
@@ -48,8 +48,8 @@ function fediversebridge_admin_handler($pages) {
 function fediversebridge_add_profile_menu() {
     $user = ossn_user_by_guid(ossn_get_page_owner_guid());
     $viewer = ossn_loggedin_user();
-
-    if ($user && $viewer && $user->guid === $viewer->guid) {
+    //if ($user && $viewer && $user->guid === $viewer->guid) {
+    if ($user && $viewer && ($user->guid === $viewer->guid || ossn_isAdminLoggedin())) {
         ossn_register_menu_link(
             'fediverse_optin',
             'Fediverse',
@@ -85,8 +85,22 @@ function fediversebridge_ossn_style_handler($pages) {
         case 'inbox':     include_once __DIR__ . '/pages/fediverse/inbox.php'; return true;
         case 'followers': include_once __DIR__ . '/pages/fediverse/followers.php'; return true;
         case 'webfinger': include_once __DIR__ . '/pages/fediverse/webfinger.php'; return true;
-        default:          ossn_error_page(); return false;
+        case 'media':
+            if (isset($pages[1]) && $pages[1] === 'proxy') {
+                include_once __DIR__ . '/pages/fediverse/media/proxy.php';
+                return true;
+            }
+            break;
+        case 'avatar':
+            if (isset($pages[1]) && $pages[1] === 'proxy') {
+                include_once __DIR__ . '/pages/fediverse/avatar/proxy.php';
+                return true;
+            }
+            break;
     }
+
+    ossn_error_page();
+    return false;
 }
 
 function fediversebridge_wellknown_handler($pages) {
@@ -94,7 +108,8 @@ function fediversebridge_wellknown_handler($pages) {
         include_once __DIR__ . '/pages/well-known/webfinger.php';
         return true;
     }
-    ossn_error_page(); return false;
+    ossn_error_page();
+    return false;
 }
 
 function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
@@ -122,7 +137,6 @@ function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
     $activity_id = "{$outbox_base}#activity-{$post->guid}";
     $now = date('c');
     $ossn_url = ossn_site_url("shared_content/post/{$post->guid}/" . time());
-
     $safe_content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
 
     $note = [
