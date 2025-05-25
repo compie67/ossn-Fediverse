@@ -1,8 +1,26 @@
 With your help, i make more cool modules
 https://buy.stripe.com/6oE6pS1V2eie0p27ss
 
+Please help me with the VPS.
+**
+Sources for the Fediverse Integration:
+WordPress Fediverse Plugin:
+Inspired by WordPress plugins that allow integration with federated networks, providing seamless content sharing.
 
+ActivityPub:
+A decentralized social networking protocol used for federating social platforms. It enables servers to share content, posts, and user data in a decentralized manner across various networks (e.g., Mastodon, Pleroma).
 
+WebFinger:
+A protocol used to retrieve account information in a decentralized manner. It helps in identifying users across federated networks.
+
+Fediverse Libraries and Documentation:
+Various resources like the ActivityPub specification and Fediverse documentation guide the development of decentralized social applications.
+
+Open Source Examples:
+There are many open-source implementations that provide a starting point for building Fediverse-compatible platforms, including examples from platforms like Mastodon and Pleroma.
+
+It’s been a fun journey working with these tools and concepts, experimenting with decentralized technologies, and finding creative ways to connect different networks in a privacy-conscious manner. The integration has allowed for an exciting new direction in developing federated social networks.
+**
 
 🇳🇱 FediverseBridge voor OSSN – Uitleg
 FediverseBridge is een OSSN-module die gebruikers van jouw sociale netwerk (zoals nlsociaal.nl) koppelt aan het bredere Fediverse – het gedecentraliseerde netwerk van Mastodon, Friendica, Pleroma en meer.
