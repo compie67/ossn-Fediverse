@@ -1,0 +1,35 @@
+Hi #MastoAdmin and #ActivityPub developers 👋
+
+I'm currently testing an OSSN-based social platform that federates via ActivityPub. Hashtags and Likes are received properly (via signed Create and Like activities), but replies to our posts aren't being received.
+
+Here’s what I need help with:
+
+✅ Our posts include a valid Note with:
+
+to: https://www.w3.org/ns/activitystreams#Public
+
+url: pointing to our canonical post URL
+
+id: full post URL (same as url)
+
+published, attributedTo, etc.
+
+🧩 When replying from Mastodon to one of our posts, the ActivityPub message does contain an inReplyTo with the full URL of the original post.
+
+However:
+❌ No Create activity with Note and inReplyTo is received on our inbox endpoint.
+✅ We do receive Like, Undo, and Delete activities without problems.
+
+Question:
+👉 Under what exact conditions does Mastodon send a federated reply (as a Create with Note and inReplyTo) to the original post’s inbox?
+Do we need to:
+
+support Accept for incoming Follow?
+
+add a cc field with the replier’s inbox?
+
+expose a replies collection?
+
+be whitelisted somehow?
+
+Thanks for any pointers!
