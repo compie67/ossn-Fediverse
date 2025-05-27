@@ -2,6 +2,9 @@ With your help, i make more cool modules
 https://buy.stripe.com/6oE6pS1V2eie0p27ss
 
 Please help me with the VPS.
+-----------------------------------------------
+
+BE AWARE PRESENT MODULE IS FULL WITH DEBUG AND LOGGING. v1
 
 **
 Sources for the Fediverse Integration:
