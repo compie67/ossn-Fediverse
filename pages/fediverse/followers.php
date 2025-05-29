@@ -1,44 +1,38 @@
 <?php
 /**
  * pages/fediverse/followers.php
- * 🇳🇱 ActivityPub endpoint voor het ophalen van volgers van een gebruiker
  * 🇬🇧 ActivityPub endpoint returning the followers list of a given user
+ * 🇳🇱 ActivityPub endpoint voor het ophalen van volgers van een gebruiker
  *
- * Gemaakt door Eric Redegeld – nlsociaal.nl
+ * Created by Eric Redegeld – nlsociaal.nl
  */
 
-// 📄 Stel correcte Content-Type in voor ActivityStreams JSON
-// 📄 Set the correct Content-Type for ActivityStreams JSON
+// 📄 Set proper ActivityStreams content type
 header('Content-Type: application/activity+json');
 
-// 🧭 Haal gebruikersnaam op uit routersegment /fediverse/followers/{username}
-// 🧭 Extract username from route
+// 🧭 Extract username from URL: /fediverse/followers/{username}
 global $FediversePages;
 $username = $FediversePages[1] ?? null;
 
-// ❌ Geen gebruikersnaam opgegeven
 // ❌ No username provided
 if (!$username) {
     http_response_code(400);
-    echo json_encode(['error' => 'Gebruikersnaam ontbreekt / Username missing']);
+    echo json_encode(['error' => 'Username missing']);
     exit;
 }
 
-// 🔍 Controleer of gebruiker bestaat in OSSN
-// 🔍 Validate user exists in OSSN
+// 🔍 Check if user exists
 $user = ossn_user_by_username($username);
 if (!$user) {
     http_response_code(404);
-    echo json_encode(['error' => 'Gebruiker niet gevonden / User not found']);
+    echo json_encode(['error' => 'User not found']);
     exit;
 }
 
-// 📁 Pad naar followers-bestand met actor-URL's
-// 📁 Path to JSON file with actor URLs of followers
+// 📁 Path to followers file (list of actor URLs)
 $followers_file = ossn_get_userdata("components/FediverseBridge/followers/{$username}.json");
 
-// 📦 Start van de ActivityStreams OrderedCollection structuur
-// 📦 Begin ActivityStreams OrderedCollection response structure
+// 📦 Base structure for ActivityStreams OrderedCollection
 $followers = [
     '@context' => 'https://www.w3.org/ns/activitystreams',
     'id' => ossn_site_url("fediverse/followers/{$username}"),
@@ -47,21 +41,18 @@ $followers = [
     'orderedItems' => []
 ];
 
-// 📥 Voeg volgers toe als followers.json geldig is
-// 📥 Add followers if followers.json exists and is valid
+// 📥 Load and validate follower list from file
 if (file_exists($followers_file)) {
     $data = json_decode(file_get_contents($followers_file), true);
 
     if (is_array($data)) {
-        $followers['orderedItems'] = array_values($data); // 🎯 Actor-URL's van volgers
-        $followers['totalItems'] = count($data);           // 🔢 Totaal
+        $followers['orderedItems'] = array_values($data); // Actor URLs
+        $followers['totalItems'] = count($data);          // Count
     } else {
-        // ⚠️ JSON is corrupt of geen array
-        // ⚠️ JSON is corrupt or invalid
-        fediversebridge_log("⚠️ followers.json voor {$username} is ongeldig");
+        // ⚠️ Log if the JSON is corrupt or invalid
+        fediversebridge_log("⚠️ Invalid followers.json for {$username}");
     }
 }
 
-// 📤 Stuur JSON terug als gestructureerde ActivityPub-OrderedCollection
-// 📤 Return structured ActivityPub OrderedCollection response
+// 📤 Return JSON response
 echo json_encode($followers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
