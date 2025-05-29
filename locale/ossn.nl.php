@@ -17,6 +17,8 @@ ossn_register_languages('nl', array(
     'fediversebridge:optin:profile:title' => 'Fediverse Opt-in',
     'fediversebridge:optin:profile:enabled' => 'Status: Ingeschakeld',
     'fediversebridge:optin:profile:disabled' => 'Status: Uitgeschakeld',
+    'fediversebridge:user:summary' => 'Gebruiker van dit platform',
+
 
     // 🔘 Knoppen
     'fediversebridge:optin:profile:enablebtn' => '✅ Inschakelen',
@@ -27,5 +29,10 @@ ossn_register_languages('nl', array(
     'fediversebridge:optin:profile:error' => '❌ Fediverse opt-in is uitgeschakeld voor %s.',
 
     // ❗️Fallback
-    'fediversebridge:nousers' => 'Geen gebruikers hebben opt-in ingeschakeld.'
+    'fediversebridge:nousers' => 'Geen gebruikers hebben opt-in ingeschakeld.',
+    // url to ossn site 
+    'fediversebridge:footerlink' => '🔗 Klik hier voor meer op nlsociaal.nl',
+    'fediversebridge:user:summary' => 'Gebruiker van nlsociaal.nl – geen bot, handmatig gepost',
+
+
 ));
