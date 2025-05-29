@@ -1,73 +1,72 @@
 <?php
 /**
- * disable.php – Deactivatie van FediverseBridge
- * 🇳🇱 Gemaakt door Eric Redegeld voor nlsociaal.nl
- * 🇬🇧 Created by Eric Redegeld for nlsociaal.nl
+ * disable.php – Deactivation script for FediverseBridge
+ * Created by Eric Redegeld for nlsociaal.nl
  *
- * 🇳🇱 Functies:
- * - Verwijdert testberichten van bekende gebruikers
- * - Leegt het logbestand
- * - (optioneel) Verwijdert private/public keys
- * - (optioneel) Verwijdert de gehele userdata-directory
- *
- * 🇬🇧 Features:
- * - Removes test posts of known users
+ * Functionality:
+ * - Removes test posts for opted-in users
  * - Resets the log file
- * - (optional) Removes key pairs
- * - (optional) Removes full component userdata
+ * - (optional) Removes private/public key pairs
+ * - (optional) Fully deletes component data directory
  */
 
-// 📁 Pad naar gebruikersdata van component
-// 📁 Path to component userdata directory
-$base = ossn_get_userdata('components/FediverseBridge');
+// 📁 Component data path
+$base     = ossn_get_userdata('components/FediverseBridge');
 $log_file = "{$base}/logs/fediverse.log";
 
-// 🧹 Testberichten verwijderen van bekende gebruikers
-// 🧹 Remove test outbox files from predefined users
-$users = ['admin', 'testsociaal'];
+// 👥 Determine users based on opt-in files
+$users = [];
+$optin_dir = "{$base}/optin";
+if (is_dir($optin_dir)) {
+    $files = scandir($optin_dir);
+    foreach ($files as $file) {
+        if (str_ends_with($file, '.json')) {
+            $username = basename($file, '.json');
+            $users[] = $username;
+        }
+    }
+}
+
+// ➕ Optionally include central system users
+$users = array_unique(array_merge($users, ['admin']));
+
+// 🧹 Remove test message from outbox
 foreach ($users as $username) {
     $testfile = "{$base}/outbox/{$username}/enable-test.json";
     if (file_exists($testfile)) {
         unlink($testfile);
-        file_put_contents($log_file, date('c') . " 🧹 Testbericht verwijderd: {$testfile}\n", FILE_APPEND);
+        file_put_contents($log_file, date('c') . " 🧹 Removed test post: {$testfile}\n", FILE_APPEND);
     }
 }
 
-// 📄 Logbestand overschrijven met marker (niet verwijderen)
-// 📄 Overwrite log file with marker (don't delete completely)
+// 🧾 Clear the log file with marker (do not fully delete it)
 if (file_exists($log_file)) {
-    file_put_contents($log_file, date('c') . " 🧹 Logbestand gewist\n");
+    file_put_contents($log_file, date('c') . " 🧹 Log reset via disable.php\n");
 }
 
-// 🔐 Sleutels verwijderen (alleen als expliciet ingeschakeld)
-// 🔐 Delete private/public keys (only if enabled)
-$verwijder_sleutels = false; // 🔁 Zet op true indien gewenst
+// 🔐 Remove private/public keys (set to true only if needed)
+$remove_keys = false;
 
-if ($verwijder_sleutels) {
+if ($remove_keys) {
     foreach ($users as $username) {
-        $key = "{$base}/private/{$username}.pem";
-        $pub = "{$base}/private/{$username}.pubkey";
+        $key  = "{$base}/private/{$username}.pem";
+        $pub  = "{$base}/private/{$username}.pubkey";
 
         if (file_exists($key)) {
             unlink($key);
-            file_put_contents($log_file, date('c') . " ❌ Private key verwijderd: {$key}\n", FILE_APPEND);
+            file_put_contents($log_file, date('c') . " ❌ Private key removed: {$key}\n", FILE_APPEND);
         }
         if (file_exists($pub)) {
             unlink($pub);
-            file_put_contents($log_file, date('c') . " ❌ Public key verwijderd: {$pub}\n", FILE_APPEND);
+            file_put_contents($log_file, date('c') . " ❌ Public key removed: {$pub}\n", FILE_APPEND);
         }
     }
 }
 
-// ⚠️ Volledige userdata verwijderen (alleen testomgevingen)
-// ⚠️ Fully wipe all component data (use in test only!)
-$volledig_verwijderen = false; // ⚠️ Pas op met productieomgevingen
+// ⚠️ Completely remove component data folder (only for full uninstall or test)
+$full_remove = false;
 
-if ($volledig_verwijderen && is_dir($base)) {
-    /**
-     * 🇳🇱 Recursieve mapverwijdering
-     * 🇬🇧 Recursive directory deletion
-     */
+if ($full_remove && is_dir($base)) {
     function rrmdir($dir) {
         foreach (glob($dir . '/*') as $f) {
             if (is_dir($f)) {
@@ -80,5 +79,5 @@ if ($volledig_verwijderen && is_dir($base)) {
     }
 
     rrmdir($base);
-    error_log("[FediverseBridge] ⚠️ Gehele userdata-structuur verwijderd uit {$base}");
+    error_log("[FediverseBridge] ⚠️ Component data folder fully removed from {$base}");
 }
