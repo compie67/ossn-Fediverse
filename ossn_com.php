@@ -5,14 +5,18 @@
  * 🇬🇧 Created by Eric Redegeld for nlsociaal.nl
  */
 
-// Laadt de benodigde helperbestanden voor volgers en handtekeningen
-// 🇳🇱 Load required helper files for followers and signatures
+// 🛠️ Debuggen aan/uit (alleen logs schrijven als true)
+// 🛠️ Debug on/off (write logs only if true)
+define('FEDIVERSEBRIDGE_DEBUG', false);
+
+// 📥 Helpers inladen
 require_once __DIR__ . '/helpers/followers.php';
 require_once __DIR__ . '/helpers/sign.php';
 
-// Functie voor het loggen van berichten naar een logbestand
-// 🇳🇱 Function to log messages into a log file
+// 📑 Logfunctie (alleen actief als debug aan staat)
+// Logging function (only active if debug enabled)
 function fediversebridge_log($msg) {
+    if (!FEDIVERSEBRIDGE_DEBUG) return;
     $logfile = ossn_get_userdata('components/FediverseBridge/logs/fediverse.log');
     if (file_exists($logfile) && filesize($logfile) > 1024 * 1024) {
         rename($logfile, $logfile . '.' . time() . '.bak');
@@ -20,13 +24,11 @@ function fediversebridge_log($msg) {
     file_put_contents($logfile, date('c') . " {$msg}\n", FILE_APPEND);
 }
 
-// Initialisatie van de FediverseBridge component
-// 🇳🇱 Initialize the FediverseBridge component
+// 🚀 Init functie voor OSSN
 function fediversebridge_init() {
-    fediversebridge_log("✅ INIT: FediverseBridge geladen"); // Log de initialisatie
+    fediversebridge_log("✅ INIT: FediverseBridge geladen");
 
-    // Registreer menu-opties voor de admin
-    // 🇳🇱 Register menu options for the admin
+    // ⚙️ Admin link
     ossn_register_admin_sidemenu(
         'fediversebridge_optinusers',
         'Fediverse Opt-in Users',
@@ -34,28 +36,22 @@ function fediversebridge_init() {
         'admin'
     );
 
-    // Registreer callback voor profielpagina en verschillende pagina-handlers
-    // 🇳🇱 Register callback for profile page and various page handlers
+    // 📄 Pagina- en profielkoppelingen
     ossn_register_callback('page', 'load:profile', 'fediversebridge_add_profile_menu');
     ossn_register_page('fediversebridge', 'fediversebridge_internal_handler');
     ossn_register_page('fediverse', 'fediversebridge_ossn_style_handler');
     ossn_register_page('well-known', 'fediversebridge_wellknown_handler');
     ossn_register_page('fediverse-admin', 'fediversebridge_admin_handler');
 
-    // Voeg extra CSS toe voor de admin interface
-    // 🇳🇱 Add extra CSS for the admin interface
+    // 🎨 Admin CSS
     ossn_extend_view('ossn/admin/head', 'css/fediversebridge');
 
-    // Registreer callback voor het plaatsen van berichten op het Fediverse
-    // 🇳🇱 Register callback for posting content to the Fediverse
+    // 🧱 Post federatie registreren
     ossn_register_callback('wall', 'post:created', 'fediversebridge_wall_post_to_fediverse');
-    // Registreer callback voor het verwijderen van berichten
-    // 🇳🇱 Register callback for deleting posts
     ossn_register_callback('post', 'before:delete', 'fediversebridge_on_post_delete');
 }
 
-// Admin-pagina voor opt-in gebruikers
-// 🇳🇱 Admin page for opt-in users
+// 🔐 Admin-only pagina voor opt-in gebruikerslijst
 function fediversebridge_admin_handler($pages) {
     if ($pages[0] === 'optinusers') {
         include_once __DIR__ . '/pages/admin/optinusers.php';
@@ -64,8 +60,7 @@ function fediversebridge_admin_handler($pages) {
     return false;
 }
 
-// Voeg een "Fediverse"-optie toe aan de profielpagina
-// 🇳🇱 Add a "Fediverse" option to the profile page
+// ➕ Voeg profielmenu “Fediverse” toe
 function fediversebridge_add_profile_menu() {
     $user = ossn_user_by_guid(ossn_get_page_owner_guid());
     $viewer = ossn_loggedin_user();
@@ -79,8 +74,7 @@ function fediversebridge_add_profile_menu() {
     }
 }
 
-// Verwerk de interne opt-in pagina
-// 🇳🇱 Process the internal opt-in page
+// 📂 Profielsubpagina afhandeling
 function fediversebridge_internal_handler($pages) {
     if ($pages[0] === 'optin' && isset($pages[1])) {
         $username = basename($pages[1]);
@@ -96,8 +90,7 @@ function fediversebridge_internal_handler($pages) {
     return false;
 }
 
-// Verwerk de verschillende Fediverse-pagina's (zoals actor, inbox, outbox, etc.)
-// 🇳🇱 Process various Fediverse pages (actor, inbox, outbox, etc.)
+// 🌐 Handler voor ActivityPub pagina's
 function fediversebridge_ossn_style_handler($pages) {
     global $FediversePages;
     $FediversePages = $pages;
@@ -122,24 +115,21 @@ function fediversebridge_ossn_style_handler($pages) {
             }
             break;
     }
-
-    ossn_error_page(); // Als de pagina niet herkend wordt, toon een fout
+    ossn_error_page(); // Onbekende pagina
     return false;
 }
 
-// Verwerk de well-known URL (voor webfinger)
-// 🇳🇱 Process the well-known URL (for webfinger)
+// 📡 Well-known handler (WebFinger)
 function fediversebridge_wellknown_handler($pages) {
     if ($pages[0] === 'webfinger') {
         include_once __DIR__ . '/pages/well-known/webfinger.php';
         return true;
     }
-    ossn_error_page(); // Toon een fout als de pagina niet wordt herkend
+    ossn_error_page();
     return false;
 }
 
-// Verzend een bericht naar het Fediverse bij het plaatsen van een bericht
-// 🇳🇱 Send a post to the Fediverse when a wall post is created
+// 📝 Federatie bij post met #
 function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
     if (!isset($params['object_guid'])) return;
 
@@ -211,16 +201,14 @@ function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        $response = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_exec($ch); // Response niet opgeslagen
         curl_close($ch);
 
-        fediversebridge_log("📤 Verzonden naar {$inbox_url} | HTTP {$httpcode}");
+        fediversebridge_log("📤 Verzonden naar {$inbox_url}");
     }
 }
 
-// Verwijder berichten uit de outbox wanneer deze worden verwijderd
-// 🇳🇱 Remove posts from the outbox when they are deleted
+// 🗑️ Verwijder fediversepost bij OSSN delete
 function fediversebridge_on_post_delete($callback, $type, $guid) {
     $post = ossn_get_object($guid);
     if (!$post || $post->type !== 'user') return;
@@ -232,8 +220,6 @@ function fediversebridge_on_post_delete($callback, $type, $guid) {
     $file = ossn_get_userdata("components/FediverseBridge/outbox/{$username}/{$guid}.json");
 
     if (file_exists($file)) {
-        // Parse het originele object om juiste delete-ID te bouwen
-        // 🇳🇱 Parse the original object to build the correct delete ID
         $activity = json_decode(file_get_contents($file), true);
         $object_id = $activity['object']['id'] ?? null;
         unlink($file);
@@ -259,16 +245,14 @@ function fediversebridge_on_post_delete($callback, $type, $guid) {
                 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                $response = curl_exec($ch);
-                $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_exec($ch);
                 curl_close($ch);
 
-                fediversebridge_log("📤 DELETE verzonden naar {$inbox_url} | HTTP {$httpcode}");
+                fediversebridge_log("📤 DELETE verzonden naar {$inbox_url}");
             }
         }
     }
 }
 
-// Registreer de init functie van de component
-// 🇳🇱 Register the component's init function
+// 🚀 Component init registreren
 ossn_register_callback('ossn', 'init', 'fediversebridge_init');
