@@ -1,65 +1,66 @@
 <?php
 /**
  * helpers/followers.php
- * 🇳🇱 Gemaakt door Eric Redegeld voor nlsociaal.nl
- * 🇬🇧 Created by Eric Redegeld for nlsociaal.nl
+ * Created by Eric Redegeld for nlsociaal.nl
  *
- * ✅ Functie: haalt inbox-URL's op van volgers van een gebruiker op het Fediverse
- * ✅ Alleen actieve (opt-in) gebruikers worden doorgestuurd
+ * Provides helper functions to retrieve the inbox URLs of followers
+ * Only active (opt-in) users are federated
  */
 
 /**
- * 🇳🇱 Haalt de inbox-URL's op van alle Fediverse-volgers van een OSSN-gebruiker
- * 🇬🇧 Fetches the inbox URLs of all Fediverse followers for a given OSSN user
+ * Fetches the inbox URLs of all Fediverse followers for a given OSSN user
  *
- * @param string $username OSSN gebruikersnaam
- * @return array Inbox-URL's of fallback-lijst
+ * @param string $username OSSN username
+ * @return array Inbox URLs of followers or fallback list
  */
 function fediversebridge_get_followers_inboxes($username) {
-    // 📁 Basispad voor opslag
-    // 📁 Base storage path
     $base = ossn_get_userdata("components/FediverseBridge");
-
-    // ✅ Eerst controleren of gebruiker Fediverse-opt-in heeft gedaan
-    // ✅ First check if user has opted in for Fediverse publishing
     $optin_file = "{$base}/optin/{$username}.json";
+
+    // User has not opted in → do not federate
     if (!file_exists($optin_file)) {
-        fediversebridge_log("⛔️ Geen opt-in bestand voor {$username}, post wordt niet gefedereerd.");
+        if (defined('FEDIVERSEBRIDGE_DEBUG') && FEDIVERSEBRIDGE_DEBUG) {
+            fediversebridge_log("⛔️ No opt-in file for {$username}, post will not be federated.");
+        }
         return [];
     }
 
-    // 📥 Pad naar followers-bestand
-    // 📥 Path to followers file containing actor URLs
     $followers_file = "{$base}/followers/{$username}.json";
 
-    // 🧭 Geen followers.json → gebruik fallback servers
-    // 🧭 No followers file → fallback to common Fediverse inboxes
+    // No followers file → fallback to known public inboxes
     if (!file_exists($followers_file)) {
-        fediversebridge_log("ℹ️ Geen followers.json voor {$username}, verstuur alleen naar fallback inboxes.");
-        return [
-            'https://mastodon.social/inbox',
-            'https://mastodon.nl/inbox',
-            'https://mastodon.education/inbox',
-            'https://pleroma.envs.net/inbox',     // optioneel Pleroma
-            'https://diaspod.org/inbox'           // optioneel Diaspora via bridge
-        ];
+        if (defined('FEDIVERSEBRIDGE_DEBUG') && FEDIVERSEBRIDGE_DEBUG) {
+            fediversebridge_log("ℹ️ No followers.json for {$username}, using fallback inboxes.");
+        }
+        return fediversebridge_fallback_inboxes();
     }
 
-    // 📄 Bestand inlezen en decoderen
-    // 📄 Read and decode followers.json
     $followers = json_decode(file_get_contents($followers_file), true);
     if (!is_array($followers)) {
-        fediversebridge_log("⚠️ Followers.json corrupt of ongeldig voor {$username}");
+        if (defined('FEDIVERSEBRIDGE_DEBUG') && FEDIVERSEBRIDGE_DEBUG) {
+            fediversebridge_log("⚠️ Invalid followers.json for {$username}");
+        }
         return [];
     }
 
-    // 🔄 Zet elke actor-URL om naar zijn /inbox endpoint
-    // 🔄 Convert each actor URL to its corresponding inbox
-    $inboxes = [];
-    foreach ($followers as $actor_url) {
-        $actor_url = rtrim($actor_url, '/'); // 🇳🇱 Sluitende slash weghalen
-        $inboxes[] = "{$actor_url}/inbox";
-    }
+    // Convert each actor URL to its inbox endpoint
+    return array_map(function($actor_url) {
+        return rtrim($actor_url, '/') . '/inbox';
+    }, $followers);
+}
 
-    return $inboxes;
+/**
+ * Returns fallback inboxes when no valid followers list is found
+ *
+ * @return array
+ */
+function fediversebridge_fallback_inboxes() {
+    return [
+        'https://mastodon.social/inbox',
+        'https://mastodon.nl/inbox',
+        'https://mastodon.education/inbox',
+        'https://pleroma.envs.net/inbox',
+        'https://diaspod.org/inbox',
+        'https://iviv.hu/inbox'
+    ];
 }
