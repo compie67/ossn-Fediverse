@@ -1,56 +1,49 @@
 <?php
 /**
  * pages/well-known/webfinger.php
- * 🇳🇱 WebFinger endpoint voor federatie (vertaalt @user@domein naar actor-profiel)
  * 🇬🇧 WebFinger endpoint for federation – maps @user@domain to ActivityPub actor
+ * 🇳🇱 WebFinger endpoint voor federatie – vertaalt @user@domein naar actor-profiel
  *
- * Door Eric Redegeld – nlsociaal.nl
+ * Made by Eric Redegeld – nlsociaal.nl
  */
 
-// 📄 Content-Type voor WebFinger (JRD JSON)
-// 📄 Correct Content-Type for WebFinger responses
+// 📄 Set correct Content-Type for WebFinger responses (JRD JSON)
 header('Content-Type: application/jrd+json');
 
-// 📥 Haal de resource-parameter op uit querystring: ?resource=acct:user@domain
-// 📥 Extract ?resource=acct:... from query
+// 📥 Extract ?resource=acct:user@domain
 $username = $_GET['resource'] ?? '';
 if (!str_starts_with($username, 'acct:')) {
     http_response_code(400);
-    echo json_encode(['error' => 'Ongeldige resource / Invalid resource']);
+    echo json_encode(['error' => 'Invalid resource / Ongeldige resource']);
     exit;
 }
 
-// 🔍 Verwijder 'acct:' en splits op @
+// 🔍 Strip 'acct:' and split into username and domain
 $username = substr($username, 5);
 $parts = explode('@', $username);
 
-// 🌐 Bepaal domein van de OSSN-site
 // 🌐 Determine current site domain
 $local_domain = parse_url(ossn_site_url(), PHP_URL_HOST);
 
-// 🔐 Domeincheck: alleen lokale gebruikers worden geaccepteerd
-// 🔐 Ensure this request is for a local user only
+// 🔐 Accept only users of this domain
 if (count($parts) !== 2 || strtolower($parts[1]) !== strtolower($local_domain)) {
     http_response_code(404);
-    echo json_encode(['error' => 'Gebruiker hoort niet bij dit domein / User not on this domain']);
+    echo json_encode(['error' => 'User not on this domain / Gebruiker hoort niet bij dit domein']);
     exit;
 }
 
-// 👤 Haal OSSN-gebruiker op via gebruikersnaam
-// 👤 Lookup OSSN user by username
+// 👤 Look up OSSN user by username
 $user = ossn_user_by_username($parts[0]);
 if (!$user) {
     http_response_code(404);
-    echo json_encode(['error' => 'Gebruiker niet gevonden / User not found']);
+    echo json_encode(['error' => 'User not found / Gebruiker niet gevonden']);
     exit;
 }
 
-// 🧭 Bepaal URL naar het ActivityPub-profiel van de gebruiker
-// 🧭 Build full actor URL for the user
+// 🧭 Build full ActivityPub actor URL for the user
 $actor_url = ossn_site_url("fediverse/actor/{$user->username}");
 
-// 📦 Stel WebFinger JSON-response samen
-// 📦 Build the final WebFinger JRD-compliant response
+// 📦 Return JRD-compliant WebFinger JSON response
 echo json_encode([
     'subject' => "acct:{$user->username}@{$local_domain}",
     'links' => [
