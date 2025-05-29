@@ -4,7 +4,7 @@
  * 🇳🇱 Retourneert het ActivityPub-profiel van een OSSN-gebruiker
  * 🇬🇧 Returns the ActivityPub actor profile of an OSSN user
  *
- * Gemaakt door Eric Redegeld voor nlsociaal.nl
+ * Gemaakt door Eric Redegeld – open source versie
  */
 
 header('Content-Type: application/activity+json');
@@ -25,12 +25,14 @@ if (!$user) {
     return;
 }
 
-$site = ossn_site_url();
-$actor_id    = "{$site}fediverse/actor/{$username}";
-$inbox       = "{$site}fediverse/inbox/{$username}";
-$outbox      = "{$site}fediverse/outbox/{$username}";
-$followers   = "{$site}fediverse/followers/{$username}";
-$profile_url = "{$site}u/{$username}";
+// 🌍 Bouw basis-URLs op
+$site         = ossn_site_url();
+$actor_id     = "{$site}fediverse/actor/{$username}";
+$inbox        = "{$site}fediverse/inbox/{$username}";
+$outbox       = "{$site}fediverse/outbox/{$username}";
+$followers    = "{$site}fediverse/followers/{$username}";
+$profile_url  = "{$site}u/{$username}";
+$note_stub    = "{$site}fediverse/note/";
 
 // 🔑 Publieke sleutel ophalen
 $public_key_file = ossn_get_userdata("components/FediverseBridge/private/{$username}.pubkey");
@@ -41,6 +43,12 @@ if (!file_exists($public_key_file)) {
 }
 $pubkey = trim(file_get_contents($public_key_file));
 
+// 🔧 Gebruikersnaam instellen met fallback als voor- en achternaam ontbreken
+$name = trim("{$user->first_name} {$user->last_name}") ?: $username;
+
+// 📝 Samenvatting uit vertaalbestand (of fallback)
+$summary = ossn_print('fediversebridge:user:summary') ?: "Fediverse user";
+
 // 📦 Actor-profiel bouwen
 $actor = [
     '@context' => [
@@ -50,14 +58,24 @@ $actor = [
     'id' => $actor_id,
     'type' => 'Person',
     'preferredUsername' => $username,
-    'name' => "{$user->first_name} {$user->last_name}",
-    'summary' => "Gebruiker van nlsociaal.nl",
+    'name' => $name,
+    'summary' => $summary,
     'inbox' => $inbox,
     'outbox' => $outbox,
     'followers' => $followers,
     'url' => $profile_url,
     'manuallyApprovesFollowers' => false,
     'discoverable' => true,
+    'bot' => false, // 🤖 Aangegeven dat dit geen bot is
+
+    // 📫 Extra compatibiliteit met shared inbox
+    'endpoints' => [
+        'sharedInbox' => $inbox
+    ],
+
+    // 💬 Replies endpoint – dit helpt Mastodon om threading correct te herkennen
+    'replies' => $note_stub,
+
     'publicKey' => [
         'id' => "{$actor_id}#main-key",
         'owner' => $actor_id,
