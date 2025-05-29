@@ -1,39 +1,37 @@
 <?php
 /**
  * pages/fediverse/outbox.php
- * 🇳🇱 ActivityPub endpoint dat de openbare outbox van een gebruiker toont
  * 🇬🇧 ActivityPub endpoint showing the public outbox of a user
+ * 🇳🇱 ActivityPub endpoint dat de openbare outbox van een gebruiker toont
  *
- * Door Eric Redegeld – nlsociaal.nl
+ * Created by Eric Redegeld – nlsociaal.nl
  */
 
-// 📄 Stel het juiste Content-Type in voor ActivityStreams JSON
 // 📄 Set proper Content-Type for ActivityStreams JSON
 header('Content-Type: application/activity+json');
 
-// 🧭 Haal gebruikersnaam op uit routersegment: /fediverse/outbox/{username}
-// 🧭 Extract username from route
+// 🧭 Extract username from route /fediverse/outbox/{username}
 global $FediversePages;
 $username = $FediversePages[1] ?? null;
 
+// ❌ No username provided
 if (!$username) {
     http_response_code(400);
-    echo json_encode(['error' => 'Gebruikersnaam ontbreekt / Missing username']);
+    echo json_encode(['error' => 'Missing username / Gebruikersnaam ontbreekt']);
     exit;
 }
 
-// 📁 Pad naar de outbox-directory van de gebruiker
 // 📁 Path to user's outbox directory
 $dir = ossn_get_userdata("components/FediverseBridge/outbox/{$username}/");
 
+// ❌ Outbox folder not found
 if (!is_dir($dir)) {
     http_response_code(404);
-    echo json_encode(['error' => 'Outbox niet gevonden / Outbox not found']);
+    echo json_encode(['error' => 'Outbox not found / Outbox niet gevonden']);
     exit;
 }
 
-// 📦 Laad alle ActivityPub JSON-bestanden uit de outbox
-// 📦 Load all ActivityPub-compatible JSON messages from outbox
+// 📦 Load all ActivityPub JSON messages from outbox directory
 $items = [];
 foreach (glob("{$dir}*.json") as $file) {
     $json = json_decode(file_get_contents($file), true);
@@ -42,14 +40,12 @@ foreach (glob("{$dir}*.json") as $file) {
     }
 }
 
-// 🔃 Sorteer items op publicatiedatum (nieuwste eerst)
-// 🔃 Sort items by publication date (descending)
+// 🔃 Sort by published date, descending
 usort($items, function($a, $b) {
     return strtotime($b['published'] ?? 'now') <=> strtotime($a['published'] ?? 'now');
 });
 
-// 📤 Stel het ActivityPub outbox-object samen
-// 📤 Build the ActivityPub outbox response
+// 📤 Build the ActivityPub-compliant outbox structure
 $outbox = [
     '@context' => 'https://www.w3.org/ns/activitystreams',
     'id' => ossn_site_url("fediverse/outbox/{$username}"),
@@ -58,6 +54,5 @@ $outbox = [
     'orderedItems' => $items
 ];
 
-// 📤 Retourneer het resultaat als JSON
-// 📤 Return the final outbox JSON
+// 📤 Return as formatted JSON
 echo json_encode($outbox, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
