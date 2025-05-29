@@ -1,27 +1,33 @@
 <?php
 /**
- * 📦 Veilige afbeeldingsproxy voor Fediverse
- * 🇳🇱 Toont OSSN-wall afbeeldingen via veilige link (1:1 per bestand)
- * 📂 /fediverse/media/proxy?guid=123&file=bestandsnaam.jpg
+ * 📦 Image Proxy for FediverseBridge
+ * 🇳🇱 Toont veilige toegang tot OSSN wall-afbeeldingen via GUID en bestandsnaam
+ * 🇬🇧 Secure image proxy for wall attachments using GUID and filename
+ * 📂 Endpoint: /fediverse/media/proxy?guid=123&file=example.jpg
  */
 
-$guid = (int) input('guid');
-$filename = basename(input('file')); // beveiliging tegen padmanipulatie
+// 🔒 🇳🇱 Beveilig invoer
+// 🔒 🇬🇧 Sanitize input to prevent path traversal
+$guid     = (int) input('guid');
+$filename = basename(input('file'));
 
 if (!$guid || !$filename) {
-    fediversebridge_log("❌ proxy.php – GUID of bestand ontbreekt");
+    // ❌ 🇳🇱 Ongeldige invoer
+    // ❌ 🇬🇧 Invalid input
     header("HTTP/1.1 400 Bad Request");
-    exit('❌ Ongeldige aanvraag');
+    exit('❌ Invalid request');
 }
 
+// 🔍 🇳🇱 Zoek het object en controleer type
+// 🔍 🇬🇧 Retrieve object and check type
 $object = ossn_get_object($guid);
 if (!$object || $object->type !== 'user') {
-    fediversebridge_log("❌ proxy.php – Ongeldig object voor GUID {$guid}");
     header("HTTP/1.1 404 Not Found");
-    exit('❌ Object niet gevonden');
+    exit('❌ Object not found');
 }
 
-// 🔍 Zoek in zowel images/ als multiupload/
+// 📂 🇳🇱 Zoek paden naar mogelijke afbeeldingslocaties
+// 📂 🇬🇧 Look in both image and multiupload folders
 $search_dirs = [
     ossn_get_userdata("object/{$guid}/ossnwall/images/"),
     ossn_get_userdata("object/{$guid}/ossnwall/multiupload/")
@@ -36,19 +42,20 @@ foreach ($search_dirs as $dir) {
     }
 }
 
+// ❌ 🇳🇱 Bestand niet gevonden
+// ❌ 🇬🇧 File not found
 if (!$path || !file_exists($path)) {
-    fediversebridge_log("❌ proxy.php – Bestand niet gevonden: {$filename} in object {$guid}");
     header("HTTP/1.1 404 Not Found");
-    exit('❌ Bestand niet gevonden');
+    exit('❌ File not found');
 }
 
+// 🖼️ 🇳🇱 Toon afbeelding
+// 🖼️ 🇬🇧 Output image file
 $mime = mime_content_type($path);
 $size = filesize($path);
 
-fediversebridge_log("🖼️ proxy.php – Toont {$filename} ({$mime}, {$size} bytes) uit object {$guid}");
-
 header("Content-Type: {$mime}");
 header("Content-Length: {$size}");
-header("Cache-Control: public, max-age=604800");
+header("Cache-Control: public, max-age=604800"); // 7 days
 readfile($path);
 exit;
