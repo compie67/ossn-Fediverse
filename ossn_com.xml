@@ -1,50 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
-🇳🇱 OSSN Component XML-definitie 
-🇬🇧 OSSN Component XML Definition
+OSSN Component XML Definition
 
 📦 Component: FediverseBridge
-👨‍💻 Auteur / Author: Eric Redegeld
+👨‍💻 Author: Eric Redegeld
 🌐 Platform: nlsociaal.nl
-🧩 Doel / Purpose: Federatief delen van openbare wall-posts met hashtags naar het Fediverse
-⚠️ Vereist minimaal OSSN 6.6 (voor hooks, metadata en Wall-integratie)
+🧩 Purpose: Federated sharing of public wall posts with hashtags to the Fediverse via ActivityPub
+⚠️ Requires OSSN 6.6 or higher (for hooks, metadata, and Wall integration)
 -->
 
 <component xmlns="http://www.opensource-socialnetwork.org/v/3.0">
-  <!-- 🇳🇱 Unieke ID van de component / 🇬🇧 Unique component ID -->
+  <!-- Unique component ID -->
   <id>FediverseBridge</id>
 
-  <!-- 🇳🇱 Weergavenaam in OSSN beheer / 🇬🇧 Display name in OSSN admin panel -->
+  <!-- Display name in the OSSN admin panel -->
   <name>Fediverse Bridge</name>
 
-  <!-- 🇳🇱 Beschrijving / 🇬🇧 Description -->
+  <!-- Description shown in admin -->
   <description>
-    🇳🇱 Publiceert openbare #berichten van geopt-in gebruikers via ActivityPub naar het Fediverse, zoals Mastodon. 
-    🇬🇧 Publishes public hashtag posts from opted-in users to the Fediverse (e.g. Mastodon) via ActivityPub.
+    Publishes public hashtag posts from opted-in users to the Fediverse (e.g. Mastodon) via ActivityPub.
   </description>
 
-  <!-- 🇳🇱 Versie / 🇬🇧 Version -->
+  <!-- Version of the component -->
   <version>1.0.1</version>
 
-  <!-- 🇳🇱 Auteur / 🇬🇧 Author -->
+  <!-- Author of the component -->
   <author>Eric Redegeld</author>
 
-  <!-- 🇳🇱 Licentie / 🇬🇧 License -->
+  <!-- License type -->
   <license>GPLv2</license>
 
-  <!-- 🇳🇱 Minimale OSSN versie vereist / 🇬🇧 Required minimum OSSN version -->
+  <!-- Minimum OSSN version required -->
   <requires>
     <type>ossn_version</type>
     <version>6.6</version>
   </requires>
-    <requires>
-        <type>ossn_component</type>
-        <name>ContentSharing</name>
-        <comparator>enabled</comparator>
-    </requires>
-  <!-- 🇳🇱 Initialisatiebestand bij activeren / 🇬🇧 File executed on enable -->
+
+  <!-- Dependency: ContentSharing component must be enabled -->
+  <requires>
+    <type>ossn_component</type>
+    <name>ContentSharing</name>
+    <comparator>enabled</comparator>
+  </requires>
+
+  <!-- File executed on component enable -->
   <enable>enable.php</enable>
 
-  <!-- 🇳🇱 Opruimactie bij deactiveren / 🇬🇧 Cleanup script on disable (optioneel) -->
+  <!-- Optional: Cleanup script executed on component disable -->
   <disable>disable.php</disable>
 </component>
