@@ -1,55 +1,55 @@
 <?php
 /**
  * pages/fediverse/actor.php
- * 🇳🇱 Retourneert het ActivityPub-profiel van een OSSN-gebruiker
  * 🇬🇧 Returns the ActivityPub actor profile of an OSSN user
- *
- * Gemaakt door Eric Redegeld – open source versie
+ * 🇳🇱 Retourneert het ActivityPub-profiel van een OSSN-gebruiker
+ * Created by Eric Redegeld – open source version for nlsociaal.nl
  */
 
+// 🧾 Response type: ActivityPub actor JSON
 header('Content-Type: application/activity+json');
 
-// 🔍 Haal gebruikersnaam uit URL-segment: /fediverse/actor/{username}
+// 🔍 🇬🇧 Extract username from URL segment / 🇳🇱 Haal gebruikersnaam uit URL
 $username = $GLOBALS['FediversePages'][1] ?? null;
 if (!$username) {
     http_response_code(404);
-    echo json_encode(['error' => 'Gebruikersnaam ontbreekt / Username missing']);
+    echo json_encode(['error' => 'Username missing / Gebruikersnaam ontbreekt']);
     return;
 }
 
-// 🔐 Haal gebruiker op via OSSN API
+// 🔐 🇬🇧 Fetch user object / 🇳🇱 Haal OSSN gebruiker op
 $user = ossn_user_by_username($username);
 if (!$user) {
     http_response_code(404);
-    echo json_encode(['error' => 'Gebruiker niet gevonden / User not found']);
+    echo json_encode(['error' => 'User not found / Gebruiker niet gevonden']);
     return;
 }
 
-// 🌍 Bouw basis-URLs op
-$site         = ossn_site_url();
-$actor_id     = "{$site}fediverse/actor/{$username}";
-$inbox        = "{$site}fediverse/inbox/{$username}";
-$outbox       = "{$site}fediverse/outbox/{$username}";
-$followers    = "{$site}fediverse/followers/{$username}";
-$profile_url  = "{$site}u/{$username}";
-$note_stub    = "{$site}fediverse/note/";
+// 🌍 🇬🇧 Build core URLs / 🇳🇱 Genereer URL's voor ActivityPub
+$site        = ossn_site_url();
+$actor_id    = "{$site}fediverse/actor/{$username}";
+$inbox       = "{$site}fediverse/inbox/{$username}";
+$outbox      = "{$site}fediverse/outbox/{$username}";
+$followers   = "{$site}fediverse/followers/{$username}";
+$profile_url = "{$site}u/{$username}";
+$note_stub   = "{$site}fediverse/note/";
 
-// 🔑 Publieke sleutel ophalen
+// 🔑 🇬🇧 Load public key / 🇳🇱 Laad publieke sleutel
 $public_key_file = ossn_get_userdata("components/FediverseBridge/private/{$username}.pubkey");
 if (!file_exists($public_key_file)) {
     http_response_code(500);
-    echo json_encode(['error' => 'Publieke sleutel ontbreekt / Public key missing']);
+    echo json_encode(['error' => 'Public key missing / Publieke sleutel ontbreekt']);
     return;
 }
 $pubkey = trim(file_get_contents($public_key_file));
 
-// 🔧 Gebruikersnaam instellen met fallback als voor- en achternaam ontbreken
+// 📛 🇬🇧 User display name / 🇳🇱 Weergavenaam van gebruiker
 $name = trim("{$user->first_name} {$user->last_name}") ?: $username;
 
-// 📝 Samenvatting uit vertaalbestand (of fallback)
+// 📝 🇬🇧 Summary for profile / 🇳🇱 Samenvatting uit taalbestand
 $summary = ossn_print('fediversebridge:user:summary') ?: "Fediverse user";
 
-// 📦 Actor-profiel bouwen
+// 📦 🇬🇧 Build actor object / 🇳🇱 Bouw het ActivityPub-profiel
 $actor = [
     '@context' => [
         'https://www.w3.org/ns/activitystreams',
@@ -66,16 +66,11 @@ $actor = [
     'url' => $profile_url,
     'manuallyApprovesFollowers' => false,
     'discoverable' => true,
-    'bot' => false, // 🤖 Aangegeven dat dit geen bot is
-
-    // 📫 Extra compatibiliteit met shared inbox
+    'bot' => false,
     'endpoints' => [
         'sharedInbox' => $inbox
     ],
-
-    // 💬 Replies endpoint – dit helpt Mastodon om threading correct te herkennen
     'replies' => $note_stub,
-
     'publicKey' => [
         'id' => "{$actor_id}#main-key",
         'owner' => $actor_id,
@@ -83,10 +78,10 @@ $actor = [
     ]
 ];
 
-// 🖼️ Profielfoto instellen: standaard = fallback
+// 🖼️ 🇬🇧 Avatar image / 🇳🇱 Profielfoto instellen
 $icon_url = "{$site}components/FediverseBridge/images/default-avatar.jpg";
 
-// 🔍 Probeer bestaande OSSN-avatar te gebruiken
+// 🔍 🇬🇧 Attempt to find user's real avatar / 🇳🇱 Probeer echte avatar van gebruiker te vinden
 $icon_path = ossn_get_userdata("user/{$user->guid}/profile/photo/");
 $icon_file = glob("{$icon_path}larger_*");
 
@@ -101,5 +96,5 @@ $actor['icon'] = [
     'url' => $icon_url
 ];
 
-// 📤 JSON-response teruggeven
+// 📤 🇬🇧 Output ActivityPub JSON / 🇳🇱 Geef JSON terug
 echo json_encode($actor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
