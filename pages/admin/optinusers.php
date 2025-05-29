@@ -7,7 +7,11 @@
 
 if (!ossn_isAdminLoggedin()) {
     ossn_error_page();
+    return;
 }
 
+// 🔄 Laad de admin view voor opt-in gebruikers
 $content = ossn_plugin_view('fediversebridge/admin/optinusers');
-echo ossn_view_page('🔐 Fediverse Opt-in Gebruikers', $content);
+
+// 📄 Toon pagina met titel
+echo ossn_view_page(ossn_print('fediversebridge:optinusers'), $content);
