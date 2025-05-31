@@ -10,16 +10,16 @@ if (!ossn_isLoggedIn()) {
     ossn_error_page();
 }
 
-$user = $params['user'];
+$user     = $params['user'];
 $username = $user->username;
-$viewer = ossn_loggedin_user();
+$viewer   = ossn_loggedin_user();
 
 // Access control: only the user or admin
 if (!$viewer || ($viewer->guid !== $user->guid && !ossn_isAdminLoggedin())) {
     ossn_error_page();
 }
 
-// Paths
+// Paths and constants
 $base_path      = ossn_get_userdata("components/FediverseBridge");
 $optin_file     = "{$base_path}/optin/{$username}.json";
 $private_file   = "{$base_path}/private/{$username}.pem";
@@ -32,14 +32,13 @@ $domain         = parse_url(ossn_site_url(), PHP_URL_HOST);
 
 $optedin = file_exists($optin_file);
 
-// Handle form submit
+// Handle opt-in form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $wants_optin = input('fediverse_optin') === 'yes';
 
     if ($wants_optin) {
         if (!is_dir(dirname($optin_file))) mkdir(dirname($optin_file), 0755, true);
 
-        // Generate keys if needed
         if (!file_exists($private_file)) {
             $res = openssl_pkey_new(['private_key_bits' => 2048]);
             openssl_pkey_export($res, $privout);
@@ -55,35 +54,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'actor_url' => $actor_url
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        // Create welcome post
-        $first_file = "{$outbox_dir}/first.json";
-        if (!file_exists($first_file)) {
-            $now = date('c');
-            $note = [
-                '@context' => 'https://www.w3.org/ns/activitystreams',
-                'id' => "{$actor_url}#note-first",
-                'type' => 'Note',
-                'attributedTo' => $actor_url,
-                'to' => ['https://www.w3.org/ns/activitystreams#Public'],
-                'cc' => [$actor_url, "{$actor_url}/followers"],
-                'content' => "Hello Fediverse! I am {$username} on {$domain}.",
-                'published' => $now,
-                'url' => "{$actor_url}#note-first"
-            ];
+        $now = date('c');
+        $note = [
+            '@context' => 'https://www.w3.org/ns/activitystreams',
+            'id' => "{$actor_url}#note-first",
+            'type' => 'Note',
+            'attributedTo' => $actor_url,
+            'to' => ['https://www.w3.org/ns/activitystreams#Public'],
+            'cc' => [$actor_url, "{$actor_url}/followers"],
+            'content' => "Hello Fediverse! I am {$username} on {$domain}.",
+            'published' => $now,
+            'url' => "{$actor_url}#note-first"
+        ];
 
-            $activity = [
-                '@context' => 'https://www.w3.org/ns/activitystreams',
-                'id' => "{$actor_url}#activity-first",
-                'type' => 'Create',
-                'actor' => $actor_url,
-                'published' => $now,
-                'to' => ['https://www.w3.org/ns/activitystreams#Public'],
-                'object' => $note
-            ];
+        $activity = [
+            '@context' => 'https://www.w3.org/ns/activitystreams',
+            'id' => "{$actor_url}#activity-first",
+            'type' => 'Create',
+            'actor' => $actor_url,
+            'published' => $now,
+            'to' => ['https://www.w3.org/ns/activitystreams#Public'],
+            'object' => $note
+        ];
 
-            file_put_contents($first_file, json_encode($activity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-        }
-
+        file_put_contents("{$outbox_dir}/first.json", json_encode($activity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         fediversebridge_log("Opt-in activated for {$username}");
         ossn_trigger_message("Fediverse participation enabled", 'success');
     } else {
@@ -106,29 +100,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h3>Fediverse</h3>
 
     <?php if ($optedin): ?>
-        <p class="ossn-message-success">You are currently participating in the Fediverse.</p>
+        <p class="ossn-message-success">✅ You are currently participating in the Fediverse. Other users can follow you and receive your posts.</p>
     <?php else: ?>
-        <p class="ossn-message-error">You have not enabled Fediverse integration.</p>
+        <p class="ossn-message-error">❌ You are not participating in the Fediverse.</p>
     <?php endif; ?>
 
     <form method="post">
-        <div>
-            <input type="checkbox" id="fediverse_optin" name="fediverse_optin" value="yes" <?php if ($optedin) echo 'checked'; ?>>
-            <label for="fediverse_optin">I want to participate in the Fediverse</label>
-        </div>
-        <br>
+        <input type="checkbox" id="fediverse_optin" name="fediverse_optin" value="yes" <?php if ($optedin) echo 'checked'; ?>>
+        <label for="fediverse_optin">I want to participate in the Fediverse</label>
+        <br><br>
         <input type="submit" class="btn btn-primary" value="Save" />
     </form>
 
-    <pre style="background:#eee;padding:5px;margin-top:10px;">
-[DEBUG]
-Username: <?php echo $username; ?>
-Private key: <?php echo file_exists($private_file) ? 'OK' : 'MISSING'; ?>
-Public key: <?php echo file_exists($public_file) ? 'OK' : 'MISSING'; ?>
-Outbox dir: <?php echo is_dir($outbox_dir) ? 'OK' : 'MISSING'; ?>
-Opt-in json: <?php echo file_exists($optin_file) ? 'OK' : 'MISSING'; ?>
-User GUID: <?php echo $user->guid; ?>
-    </pre>
+    <div style="background: #f0f8ff; padding: 15px; border: 1px solid #a1c4e7; margin-top: 20px; border-radius: 5px;">
+        <h4>🔗 Your Fediverse identity</h4>
+        <p><strong>@<?php echo $username . '@' . $domain; ?></strong></p>
+        <p>Share this link to let others follow you:</p>
+        <p><a href="<?php echo $actor_url; ?>" target="_blank"><?php echo $actor_url; ?></a></p>
+    </div>
 
     <?php
     // Gather inbox activity
@@ -139,8 +128,8 @@ User GUID: <?php echo $user->guid; ?>
             $json = json_decode(file_get_contents($file), true);
             if (!is_array($json)) continue;
 
-            $type = $json['type'] ?? '';
-            $actor = $json['actor'] ?? 'unknown';
+            $type   = $json['type'] ?? '';
+            $actor  = $json['actor'] ?? 'unknown';
 
             if ($type === 'Like' && isset($json['object'])) {
                 $interactions[] = [
@@ -165,7 +154,7 @@ User GUID: <?php echo $user->guid; ?>
     }
 
     if (!empty($interactions)) {
-        echo "<h4>Received Messages</h4><table class='table'>";
+        echo "<h4>💬 Activity</h4><table class='table'>";
         echo "<thead><tr><th>Type</th><th>From</th><th>To</th><th>Content</th></tr></thead><tbody>";
         foreach ($interactions as $row) {
             echo "<tr>";
@@ -182,7 +171,7 @@ User GUID: <?php echo $user->guid; ?>
     if (file_exists($followers_file)) {
         $followers = json_decode(file_get_contents($followers_file), true);
         if (is_array($followers) && !empty($followers)) {
-            echo "<h4>Followers</h4><ul>";
+            echo "<h4>👥 Followers</h4><ul>";
             foreach ($followers as $f) {
                 $safe = htmlspecialchars($f);
                 echo "<li><a href='{$safe}' target='_blank'>{$safe}</a></li>";
