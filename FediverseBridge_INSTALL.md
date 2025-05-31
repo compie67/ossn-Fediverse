@@ -1,100 +1,49 @@
+# INSTALL GUIDE – FediverseBridge (for OSSN)
 
-📦 INSTALLATIE-INSTRUCTIES – FediverseBridge (voor OSSN)
+**Version:** 1.0.1  
+**Author:** Eric Redegeld – [nlsociaal.nl](https://nlsociaal.nl)
 
-Versie: 1.0
-Auteur: Eric Redegeld – nlsociaal.nl
+## 1. Install the component via OSSN
 
-# 📁 1. Bestanden uploaden
-
-Plaats de map `FediverseBridge/` in de OSSN `components/` map van jouw installatie.
-
-Bijvoorbeeld:
-  /var/www/html/components/FediverseBridge
-
-Of upload via de OSSN adminmodule in:
-  Administrator > Components > Upload
-
-# ⚙️ 2. Component activeren
-
-Ga naar:
-  Administrator > Components
-Klik op "FediverseBridge" > Enable
-
-Bij activeren worden automatisch outbox/inbox/publieke sleutels aangemaakt voor de testgebruikers `admin` en `testsociaal`.
-
-# 🌐 3. Vereiste .htaccess-regel toevoegen (WebFinger)
-
-Open jouw `.htaccess` bestand in de root van je OSSN-installatie en voeg de volgende regel toe binnen het blok <IfModule mod_rewrite.c>:
-
-RewriteRule ^\.well-known/webfinger$ index.php?h=well-known&p=webfinger [QSA,L]
-
-Zonder deze regel kunnen andere Fediverse servers jouw gebruikers niet vinden.
-
-💡 TIP: Maak altijd eerst een backup van je originele `.htaccess`. 
-Een voorbeeldbestand met deze regel staat ook in de modulemap.
-
-# 🧪 4. Test of federatie werkt
-
-Open in je browser of gebruik curl:
-
-curl "https://jouwdomein.nl/.well-known/webfinger?resource=acct:admin@jouwdomein.nl"
-
-Je moet een JSON-antwoord zien met actor-informatie.
-
-# 👤 5. Gebruikers activeren
-
-Elke gebruiker moet zichzelf "opt-in'en" via hun profielpagina. Pas daarna worden berichten met een `#` doorgestuurd naar het Fediverse.
-
-# 🛠️ Support en updates
-
-Bekijk updates of meld problemen op: https://nlsociaal.nl
-
-# 📦 INSTALL GUIDE – FediverseBridge (for OSSN)
-
-Version: 1.0
-Author: Eric Redegeld – nlsociaal.nl
-
-# 📁 1. Upload the files
-
-Place the folder `FediverseBridge/` into your OSSN `components/` folder.
-
-Example:
-  /var/www/html/components/FediverseBridge
-
-Or upload the zip via OSSN Admin at:
-  Administrator > Components > Upload
-
-# ⚙️ 2. Enable the component
-
-Go to:
-  Administrator > Components
-Click "FediverseBridge" > Enable
-
-When enabled, it will create keys and folders for test users `admin` and `testsociaal`.
-
-# 🌐 3. Add required .htaccess rewrite (WebFinger)
-
-Edit your site's `.htaccess` file and add the following rule inside the <IfModule mod_rewrite.c> block:
-
-RewriteRule ^\.well-known/webfinger$ index.php?h=well-known&p=webfinger [QSA,L]
-
-Without this, other Fediverse servers won't be able to discover your users.
-
-💡 TIP: Always back up your original `.htaccess` file first.
-A sample `.htaccess` file with this rule is included in the module directory.
+Go to your OSSN admin panel and upload the component zip file via:
 
 
-# 🧪 4. Test federation support
-Use your browser or curl to check:
+After upload, locate **FediverseBridge** in the component list.
+
+## 2. Enable the component
+
+Navigate to:
+Click **FediverseBridge** and then click **Enable**.
+
+When activated, the module will automatically create required folders and keys for the test users (`admin` and `testsociaal`).
+
+## 3. Add required `.htaccess` rewrite (for WebFinger support)
+
+Edit your OSSN site's `.htaccess` file. Inside the `<IfModule mod_rewrite.c>` block, add the following line:
+
+RewriteRule ^.well-known/webfinger$ index.php?h=well-known&p=webfinger [QSA,L]
+
+This rewrite rule is required so other Fediverse servers (such as Mastodon) can discover your users via WebFinger.
+
+> **Tip:** Always make a backup of your original `.htaccess` file before editing it.  
+> A sample `.htaccess` file is included in the component directory.
+
+## 4. Test if federation works
+
+Use your browser or run the following `curl` command:
 
 curl "https://yourdomain.com/.well-known/webfinger?resource=acct:admin@yourdomain.com"
 
-You should get a JSON response with actor info.
+You should receive a valid JSON response with ActivityPub actor information.
 
-# 👤 5. Users must opt-in
+## 5. Users must manually opt-in
 
-Each user must manually enable federation via their profile page before posts with hashtags (`#`) will be federated.
+Each user must visit their own profile page and enable federation manually.  
+Only after opting in will public wall posts containing hashtags (`#`) be federated to other platforms.
 
-# 🛠️ Support and updates
+## 6. Support and updates
 
-Find updates or report issues at: https://nlsociaal.nl
+Visit [https://nlsociaal.nl](https://nlsociaal.nl) to:
+- Check for updates
+- Report issues
+- Suggest improvements
