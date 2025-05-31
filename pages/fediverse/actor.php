@@ -1,31 +1,30 @@
 <?php
 /**
  * pages/fediverse/actor.php
- * 🇬🇧 Returns the ActivityPub actor profile of an OSSN user
- * 🇳🇱 Retourneert het ActivityPub-profiel van een OSSN-gebruiker
+ * Returns the ActivityPub actor profile of an OSSN user
  * Created by Eric Redegeld – open source version for nlsociaal.nl
  */
 
-// 🧾 Response type: ActivityPub actor JSON
+// Set response type
 header('Content-Type: application/activity+json');
 
-// 🔍 🇬🇧 Extract username from URL segment / 🇳🇱 Haal gebruikersnaam uit URL
+// Extract username from URL
 $username = $GLOBALS['FediversePages'][1] ?? null;
 if (!$username) {
     http_response_code(404);
-    echo json_encode(['error' => 'Username missing / Gebruikersnaam ontbreekt']);
+    echo json_encode(['error' => 'Username missing']);
     return;
 }
 
-// 🔐 🇬🇧 Fetch user object / 🇳🇱 Haal OSSN gebruiker op
+// Fetch user object
 $user = ossn_user_by_username($username);
 if (!$user) {
     http_response_code(404);
-    echo json_encode(['error' => 'User not found / Gebruiker niet gevonden']);
+    echo json_encode(['error' => 'User not found']);
     return;
 }
 
-// 🌍 🇬🇧 Build core URLs / 🇳🇱 Genereer URL's voor ActivityPub
+// Core URLs
 $site        = ossn_site_url();
 $actor_id    = "{$site}fediverse/actor/{$username}";
 $inbox       = "{$site}fediverse/inbox/{$username}";
@@ -34,22 +33,22 @@ $followers   = "{$site}fediverse/followers/{$username}";
 $profile_url = "{$site}u/{$username}";
 $note_stub   = "{$site}fediverse/note/";
 
-// 🔑 🇬🇧 Load public key / 🇳🇱 Laad publieke sleutel
+// Load public key
 $public_key_file = ossn_get_userdata("components/FediverseBridge/private/{$username}.pubkey");
 if (!file_exists($public_key_file)) {
     http_response_code(500);
-    echo json_encode(['error' => 'Public key missing / Publieke sleutel ontbreekt']);
+    echo json_encode(['error' => 'Public key missing']);
     return;
 }
 $pubkey = trim(file_get_contents($public_key_file));
 
-// 📛 🇬🇧 User display name / 🇳🇱 Weergavenaam van gebruiker
+// Determine user display name
 $name = trim("{$user->first_name} {$user->last_name}") ?: $username;
 
-// 📝 🇬🇧 Summary for profile / 🇳🇱 Samenvatting uit taalbestand
-$summary = ossn_print('fediversebridge:user:summary') ?: "Fediverse user";
+// Get profile summary
+$summary = ossn_print('fediversebridge:user:summary') ?: "Federated user on nlsociaal.nl";
 
-// 📦 🇬🇧 Build actor object / 🇳🇱 Bouw het ActivityPub-profiel
+// Build ActivityPub actor object
 $actor = [
     '@context' => [
         'https://www.w3.org/ns/activitystreams',
@@ -59,7 +58,7 @@ $actor = [
     'type' => 'Person',
     'preferredUsername' => $username,
     'name' => $name,
-    'summary' => $summary,
+    'summary' => $summary . ' (Reply support in progress)',
     'inbox' => $inbox,
     'outbox' => $outbox,
     'followers' => $followers,
@@ -78,10 +77,8 @@ $actor = [
     ]
 ];
 
-// 🖼️ 🇬🇧 Avatar image / 🇳🇱 Profielfoto instellen
+// Set avatar (default or real)
 $icon_url = "{$site}components/FediverseBridge/images/default-avatar.jpg";
-
-// 🔍 🇬🇧 Attempt to find user's real avatar / 🇳🇱 Probeer echte avatar van gebruiker te vinden
 $icon_path = ossn_get_userdata("user/{$user->guid}/profile/photo/");
 $icon_file = glob("{$icon_path}larger_*");
 
@@ -96,5 +93,5 @@ $actor['icon'] = [
     'url' => $icon_url
 ];
 
-// 📤 🇬🇧 Output ActivityPub JSON / 🇳🇱 Geef JSON terug
+// Output JSON
 echo json_encode($actor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
