@@ -1,35 +1,32 @@
 <?php
 /**
  * OSSN Component: FediverseBridge
- * 🇳🇱 Nederlandse taalbestand
- * Gemaakt door Eric Redegeld voor nlsociaal.nl
- *
- * 🇬🇧 Dutch language file for FediverseBridge component
+ * Dutch language file for the FediverseBridge component
  * Created by Eric Redegeld for nlsociaal.nl
  */
 
 ossn_register_languages('nl', array(
-    // 🧑‍💻 Adminmenu
+    // Admin menu
     'fediversebridge:optinusers'              => 'Fediverse Opt-in gebruikers',
     'fediversebridge:adminmenu'               => 'Fediverse Opt-in gebruikers',
 
-    // 📄 Profielpagina opt-in
+    // Profile page opt-in
     'fediversebridge:optin:profile:title'     => 'Fediverse Opt-in',
     'fediversebridge:optin:profile:enabled'   => 'Status: Ingeschakeld',
     'fediversebridge:optin:profile:disabled'  => 'Status: Uitgeschakeld',
     'fediversebridge:user:summary'            => 'Gebruiker van nlsociaal.nl – geen bot, handmatig gepost',
 
-    // 🔘 Knoppen
-    'fediversebridge:optin:profile:enablebtn' => '✅ Inschakelen',
-    'fediversebridge:optin:profile:disablebtn'=> '❌ Uitschakelen',
+    // Buttons
+    'fediversebridge:optin:profile:enablebtn' => 'Inschakelen',
+    'fediversebridge:optin:profile:disablebtn'=> 'Uitschakelen',
 
-    // ✅ Feedbackmeldingen
-    'fediversebridge:optin:profile:success'   => '✅ Fediverse opt-in is ingeschakeld voor %s.',
-    'fediversebridge:optin:profile:error'     => '❌ Fediverse opt-in is uitgeschakeld voor %s.',
+    // Feedback messages
+    'fediversebridge:optin:profile:success'   => 'Fediverse opt-in is ingeschakeld voor %s.',
+    'fediversebridge:optin:profile:error'     => 'Fediverse opt-in is uitgeschakeld voor %s.',
 
-    // ❗️Fallback
+    // Fallback
     'fediversebridge:nousers'                 => 'Geen gebruikers hebben opt-in ingeschakeld.',
 
-    // 🌍 Voettekstlink
-    'fediversebridge:footerlink'              => '🔗 Klik hier voor meer op nlsociaal.nl',
+    // Footer link
+    'fediversebridge:footerlink'              => 'Klik hier voor meer op nlsociaal.nl',
 ));
