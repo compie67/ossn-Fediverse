@@ -11,22 +11,30 @@ ossn_register_languages('en', array(
     'fediversebridge:adminmenu'            => 'Fediverse Opt-in Users',
 
     // Profile opt-in page
-    'fediversebridge:optin:profile:title'   => 'Fediverse Opt-in',
-    'fediversebridge:optin:profile:enabled' => 'Status: Enabled',
-    'fediversebridge:optin:profile:disabled'=> 'Status: Disabled',
-    'fediversebridge:user:summary'          => 'Human user of nlsociaal.nl – not a bot',
-
-    // Buttons
-    'fediversebridge:optin:profile:enablebtn'  => 'Enable',
-    'fediversebridge:optin:profile:disablebtn' => 'Disable',
+    'fediversebridge:optin:profile:title'    => 'Fediverse Opt-in',
+    'fediversebridge:optin:profile:enabled'  => '✅ You are currently participating in the Fediverse.',
+    'fediversebridge:optin:profile:disabled' => '❌ You are not participating in the Fediverse.',
+    'fediversebridge:optin:profile:enablebtn'=> 'Enable',
+    'fediversebridge:optin:profile:disablebtn'=> 'Disable',
+    'fediversebridge:optin:profile:identity' => 'Your Fediverse identity',
+    'fediversebridge:optin:profile:linktext' => 'Share this link to let others follow you:',
+    'fediversebridge:optin:profile:username' => 'Username: %s',
+    'fediversebridge:optin:profile:followers'=> 'Followers',
+    'fediversebridge:optin:profile:activity' => 'Activity',
+    'fediversebridge:optin:profile:activity:type' => 'Type',
+    'fediversebridge:optin:profile:activity:from' => 'From',
+    'fediversebridge:optin:profile:activity:to'   => 'To',
+    'fediversebridge:optin:profile:activity:content'=> 'Content',
 
     // Feedback messages
-    'fediversebridge:optin:profile:success' => 'Fediverse opt-in has been enabled for %s.',
-    'fediversebridge:optin:profile:error'   => 'Fediverse opt-in has been disabled for %s.',
+    'fediversebridge:optin:profile:success'  => 'Fediverse opt-in has been enabled for %s.',
+    'fediversebridge:optin:profile:error'    => 'Fediverse opt-in has been disabled for %s.',
 
-    // Fallback
-    'fediversebridge:nousers'              => 'No users have opted in to the Fediverse.',
+    // Fallbacks
+    'fediversebridge:nousers'               => 'No users have opted in to the Fediverse.',
+    'fediversebridge:nofollowers'           => 'No followers yet.',
+    'fediversebridge:noactivity'            => 'No incoming likes or replies yet.',
 
-    // Footer link
-    'fediversebridge:footerlink'           => 'Click here to view more on nlsociaal.nl',
+    // Footer
+    'fediversebridge:footerlink'            => 'Click here to view more on nlsociaal.nl',
 ));
