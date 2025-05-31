@@ -1,4 +1,3 @@
-
 📦 INSTALLATIE-INSTRUCTIES – FediverseBridge (voor OSSN)
 
 Versie: 1.0
