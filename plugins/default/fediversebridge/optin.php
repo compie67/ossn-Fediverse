@@ -1,10 +1,9 @@
 <?php
 /**
  * plugins/default/fediversebridge/optin.php
- * 🇳🇱 Profielpagina Fediverse met opt-in, Bluesky-handle, replies, likes en volgers
- * 🇬🇧 Fediverse profile page with opt-in, Bluesky handle, replies, likes and followers
+ * Fediverse profile page with opt-in, replies, likes and followers
  *
- * Door Eric Redegeld – nlsociaal.nl
+ * Created by Eric Redegeld – nlsociaal.nl
  */
 
 if (!ossn_isLoggedIn()) {
@@ -15,12 +14,12 @@ $user = $params['user'];
 $username = $user->username;
 $viewer = ossn_loggedin_user();
 
-// 🔐 Alleen eigenaar of admin mag deze pagina bekijken
+// Access: only self or admin
 if (!$viewer || ($viewer->guid !== $user->guid && !ossn_isAdminLoggedin())) {
     ossn_error_page();
 }
 
-// 📁 Padinstellingen
+// Paths
 $base_path      = ossn_get_userdata("components/FediverseBridge");
 $optin_file     = "{$base_path}/optin/{$username}.json";
 $private_file   = "{$base_path}/private/{$username}.pem";
@@ -32,23 +31,15 @@ $actor_url      = ossn_site_url("fediverse/actor/{$username}");
 $domain         = parse_url(ossn_site_url(), PHP_URL_HOST);
 
 $optedin = file_exists($optin_file);
-$bluesky = '';
 
-// 🎯 Bluesky-handle ophalen
-if ($optedin) {
-    $json = json_decode(file_get_contents($optin_file), true);
-    $bluesky = $json['bluesky'] ?? '';
-}
-
-// 📥 Formulierverwerking
+// Form processing
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $wilt_optin     = input('fediverse_optin') === 'yes';
-    $bluesky_input  = trim(input('bluesky_handle'));
+    $wilt_optin = input('fediverse_optin') === 'yes';
 
     if ($wilt_optin) {
         if (!is_dir(dirname($optin_file))) mkdir(dirname($optin_file), 0755, true);
 
-        // 🔐 Sleutels genereren
+        // Key generation
         if (!file_exists($private_file)) {
             $res = openssl_pkey_new(['private_key_bits' => 2048]);
             openssl_pkey_export($res, $privout);
@@ -61,11 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         file_put_contents($optin_file, json_encode([
             'enabled' => true,
-            'actor_url' => $actor_url,
-            'bluesky' => $bluesky_input
+            'actor_url' => $actor_url
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        // Welkomstbericht aanmaken
+        // First welcome post
         $first_file = "{$outbox_dir}/first.json";
         if (!file_exists($first_file)) {
             $now = date('c');
@@ -76,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'attributedTo' => $actor_url,
                 'to' => ['https://www.w3.org/ns/activitystreams#Public'],
                 'cc' => [$actor_url, "{$actor_url}/followers"],
-                'content' => "👋 Hallo Fediverse! Ik ben {$username} op {$domain}.",
+                'content' => "Hello Fediverse! I am {$username} on {$domain}.",
                 'published' => $now,
                 'url' => "{$actor_url}#note-first"
             ];
@@ -94,8 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             file_put_contents($first_file, json_encode($activity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         }
 
-        fediversebridge_log("✅ Opt-in geactiveerd + Bluesky opgeslagen voor {$username}");
-        ossn_trigger_message("✅ Fediverse deelname geactiveerd", 'success');
+        fediversebridge_log("Opt-in activated for {$username}");
+        ossn_trigger_message("Fediverse participation enabled", 'success');
     } else {
         foreach ([$optin_file, $private_file, $public_file] as $f) {
             if (file_exists($f)) unlink($f);
@@ -104,38 +94,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             array_map('unlink', glob("{$outbox_dir}/*.json"));
             rmdir($outbox_dir);
         }
-        fediversebridge_log("❌ Opt-in uitgeschakeld voor {$username}");
-        ossn_trigger_message("❌ Fediverse deelname uitgeschakeld", 'error');
+        fediversebridge_log("Opt-in disabled for {$username}");
+        ossn_trigger_message("Fediverse participation disabled", 'error');
     }
 
     redirect(REF);
 }
 ?>
 
-<!-- 🔧 HTML interface -->
 <div class="ossn-profile-extra-menu fediverse-optin-page">
     <h3>Fediverse</h3>
 
     <?php if ($optedin): ?>
-        <p class="ossn-message-success">✅ Je neemt momenteel deel aan het Fediverse.</p>
+        <p class="ossn-message-success">You are currently participating in the Fediverse.</p>
     <?php else: ?>
-        <p class="ossn-message-error">❌ Je hebt Fediverse-integratie uitgeschakeld.</p>
+        <p class="ossn-message-error">You have not enabled Fediverse integration.</p>
     <?php endif; ?>
 
     <form method="post">
         <div>
             <input type="checkbox" id="fediverse_optin" name="fediverse_optin" value="yes" <?php if ($optedin) echo 'checked'; ?>>
-            <label for="fediverse_optin">Ik wil deelnemen aan het Fediverse</label>
-        </div>
-        <div style="margin-top:10px;">
-            <label for="bluesky_handle">Bluesky-handle (optioneel):</label><br>
-            <input type="text" name="bluesky_handle" id="bluesky_handle" class="form-control" placeholder="nlsociaal.bsky.social" value="<?php echo htmlspecialchars($bluesky); ?>" />
+            <label for="fediverse_optin">I want to participate in the Fediverse</label>
         </div>
         <br>
-        <input type="submit" class="btn btn-primary" value="Opslaan" />
+        <input type="submit" class="btn btn-primary" value="Save" />
     </form>
 
-    <!-- 🔍 Debuggegevens -->
     <pre style="background:#eee;padding:5px;margin-top:10px;">
 [DEBUG]
 Username: <?php echo $username; ?>
@@ -144,18 +128,10 @@ Public key: <?php echo file_exists($public_file) ? 'OK' : 'MISSING'; ?>
 Outbox dir: <?php echo is_dir($outbox_dir) ? 'OK' : 'MISSING'; ?>
 Opt-in json: <?php echo file_exists($optin_file) ? 'OK' : 'MISSING'; ?>
 User GUID: <?php echo $user->guid; ?>
-Bluesky: <?php echo $bluesky ?: 'n.v.t.'; ?>
     </pre>
 
-    <!-- 🔵 Bluesky-profiel -->
-    <?php if ($bluesky): ?>
-        <div style="background:#e8f8ff;padding:10px;margin-top:10px;border:1px solid #99ccee;">
-            <strong>🔵 Bluesky:</strong> <a href="https://bsky.app/profile/<?php echo htmlspecialchars($bluesky); ?>" target="_blank">@<?php echo htmlspecialchars($bluesky); ?></a>
-        </div>
-    <?php endif; ?>
-
-    <!-- 💬 Likes & Replies -->
     <?php
+    // Likes and Replies
     $interactions = [];
 
     if (is_dir($inbox_dir)) {
@@ -164,11 +140,11 @@ Bluesky: <?php echo $bluesky ?: 'n.v.t.'; ?>
             if (!is_array($json)) continue;
 
             $type = $json['type'] ?? '';
-            $actor = $json['actor'] ?? 'onbekend';
+            $actor = $json['actor'] ?? 'unknown';
 
             if ($type === 'Like' && isset($json['object'])) {
                 $interactions[] = [
-                    'type' => '❤️ Like',
+                    'type' => 'Like',
                     'author' => $actor,
                     'target' => $json['object'],
                     'content' => '',
@@ -178,7 +154,7 @@ Bluesky: <?php echo $bluesky ?: 'n.v.t.'; ?>
 
             if ($type === 'Create' && isset($json['object']['type']) && $json['object']['type'] === 'Note') {
                 $interactions[] = [
-                    'type' => isset($json['object']['inReplyTo']) ? '💬 Reply' : '📝 Bericht',
+                    'type' => isset($json['object']['inReplyTo']) ? 'Reply' : 'Post',
                     'author' => $actor,
                     'target' => $json['object']['inReplyTo'] ?? '',
                     'content' => strip_tags($json['object']['content'] ?? ''),
@@ -189,12 +165,12 @@ Bluesky: <?php echo $bluesky ?: 'n.v.t.'; ?>
     }
 
     if (!empty($interactions)) {
-        echo "<h4>📨 Ontvangen berichten</h4><table class='table'>";
-        echo "<thead><tr><th>Type</th><th>Van</th><th>Op</th><th>Inhoud</th></tr></thead><tbody>";
+        echo "<h4>Received Messages</h4><table class='table'>";
+        echo "<thead><tr><th>Type</th><th>From</th><th>To</th><th>Content</th></tr></thead><tbody>";
         foreach ($interactions as $row) {
             echo "<tr>";
             echo "<td>{$row['type']}</td>";
-            echo "<td><a href='{$row['author']}' target='_blank'>{$row['author']}</a></td>";
+            echo "<td><a href='{$row['author']}' target='_blank'>" . htmlspecialchars($row['author']) . "</a></td>";
             echo "<td><a href='{$row['target']}' target='_blank'>" . htmlspecialchars(basename($row['target'])) . "</a></td>";
             echo "<td>" . htmlspecialchars($row['content']) . "</td>";
             echo "</tr>";
@@ -202,11 +178,11 @@ Bluesky: <?php echo $bluesky ?: 'n.v.t.'; ?>
         echo "</tbody></table>";
     }
 
-    // 👥 Volgers tonen
+    // Show followers
     if (file_exists($followers_file)) {
         $followers = json_decode(file_get_contents($followers_file), true);
         if (is_array($followers) && !empty($followers)) {
-            echo "<h4>👥 Volgers</h4><ul>";
+            echo "<h4>Followers</h4><ul>";
             foreach ($followers as $f) {
                 $safe = htmlspecialchars($f);
                 echo "<li><a href='{$safe}' target='_blank'>{$safe}</a></li>";
