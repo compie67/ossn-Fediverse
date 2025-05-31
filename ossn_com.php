@@ -1,19 +1,19 @@
 <?php
 /**
  * OSSN Component: FediverseBridge
- * 🇳🇱 Gemaakt door Eric Redegeld voor nlsociaal.nl
- * 🇬🇧 Created by Eric Redegeld for nlsociaal.nl
+ * Gemaakt door Eric Redegeld voor nlsociaal.nl
+ * Created by Eric Redegeld for nlsociaal.nl
  */
 
-// 🛠️ Debuggen aan/uit (alleen logs schrijven als true)
-// 🛠️ Debug on/off (write logs only if true)
+// Debuggen aan/uit (alleen logs schrijven als true)
+// Debug on/off (write logs only if true)
 define('FEDIVERSEBRIDGE_DEBUG', false);
 
-// 📥 Helpers inladen
+// Helpers inladen
 require_once __DIR__ . '/helpers/followers.php';
 require_once __DIR__ . '/helpers/sign.php';
 
-// 📑 Logfunctie (alleen actief als debug aan staat)
+// Logfunctie (alleen actief als debug aan staat)
 // Logging function (only active if debug enabled)
 function fediversebridge_log($msg) {
     if (!FEDIVERSEBRIDGE_DEBUG) return;
@@ -24,43 +24,45 @@ function fediversebridge_log($msg) {
     file_put_contents($logfile, date('c') . " {$msg}\n", FILE_APPEND);
 }
 
-// 🚀 Init functie voor OSSN
+//Init functie voor OSSN
 function fediversebridge_init() {
-    fediversebridge_log("✅ INIT: FediverseBridge geladen");
+    fediversebridge_log("INIT: FediverseBridge geladen");
 
-    // ⚙️ Admin link
-    ossn_register_admin_sidemenu(
-        'fediversebridge_optinusers',
-        'Fediverse Opt-in Users',
-        'fediverse-admin/optinusers',
-        'admin'
-    );
+    // Admin link
+    ossn_register_admin_sidemenu('fediversebridge_optinusers','Fediverse Opt-in Users','fediverse-admin/optinusers','admin');
 
-    // 📄 Pagina- en profielkoppelingen
+    // Pagina- en profielkoppelingen
     ossn_register_callback('page', 'load:profile', 'fediversebridge_add_profile_menu');
     ossn_register_page('fediversebridge', 'fediversebridge_internal_handler');
     ossn_register_page('fediverse', 'fediversebridge_ossn_style_handler');
     ossn_register_page('well-known', 'fediversebridge_wellknown_handler');
     ossn_register_page('fediverse-admin', 'fediversebridge_admin_handler');
 
-    // 🎨 Admin CSS
+    // Admin CSS
     ossn_extend_view('ossn/admin/head', 'css/fediversebridge');
 
-    // 🧱 Post federatie registreren
+    // Post federatie registreren
     ossn_register_callback('wall', 'post:created', 'fediversebridge_wall_post_to_fediverse');
     ossn_register_callback('post', 'before:delete', 'fediversebridge_on_post_delete');
 }
 
-// 🔐 Admin-only pagina voor opt-in gebruikerslijst
+// Admin-only pagina voor opt-in gebruikerslijst
 function fediversebridge_admin_handler($pages) {
-    if ($pages[0] === 'optinusers') {
-        include_once __DIR__ . '/pages/admin/optinusers.php';
-        return true;
+    if ($pages[0] == 'optinusers') {
+		if (!ossn_isAdminLoggedin()) {
+   			 ossn_error_page();
+  			  return;
+		}
+		$contents = array(
+				'content' => ossn_plugin_view('fediversebridge/admin/optinusers'),
+		);		
+		$content = ossn_set_page_layout('newsfeed', $contents);
+		$title   = ossn_print('fediversebridge:optinusers');
+		echo ossn_view_page($title, $content);
     }
-    return false;
 }
 
-// ➕ Voeg profielmenu “Fediverse” toe
+// Voeg profielmenu “Fediverse” toe
 function fediversebridge_add_profile_menu() {
     $user = ossn_user_by_guid(ossn_get_page_owner_guid());
     $viewer = ossn_loggedin_user();
@@ -74,7 +76,7 @@ function fediversebridge_add_profile_menu() {
     }
 }
 
-// 📂 Profielsubpagina afhandeling
+//Profielsubpagina afhandeling
 function fediversebridge_internal_handler($pages) {
     if ($pages[0] === 'optin' && isset($pages[1])) {
         $username = basename($pages[1]);
@@ -90,7 +92,7 @@ function fediversebridge_internal_handler($pages) {
     return false;
 }
 
-// 🌐 Handler voor ActivityPub pagina's
+// Handler voor ActivityPub pagina's
 function fediversebridge_ossn_style_handler($pages) {
     global $FediversePages;
     $FediversePages = $pages;
@@ -119,7 +121,7 @@ function fediversebridge_ossn_style_handler($pages) {
     return false;
 }
 
-// 📡 Well-known handler (WebFinger)
+// Well-known handler (WebFinger)
 function fediversebridge_wellknown_handler($pages) {
     if ($pages[0] === 'webfinger') {
         include_once __DIR__ . '/pages/well-known/webfinger.php';
@@ -129,7 +131,7 @@ function fediversebridge_wellknown_handler($pages) {
     return false;
 }
 
-// 📝 Federatie bij post met #
+// Federatie bij post met 
 function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
     if (!isset($params['object_guid'])) return;
 
@@ -146,7 +148,7 @@ function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
 
     $optin_file = ossn_get_userdata("components/FediverseBridge/optin/{$username}.json");
     if (!file_exists($optin_file)) {
-        fediversebridge_log("⏩ {$username} niet ge-opt-in – bericht niet gefedereerd");
+        fediversebridge_log("{$username} niet ge-opt-in – bericht niet gefedereerd");
         return;
     }
 
@@ -183,14 +185,14 @@ function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
     if (!is_dir($outbox_dir)) mkdir($outbox_dir, 0755, true);
     $file = "{$outbox_dir}{$post->guid}.json";
     file_put_contents($file, json_encode($activity, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-    fediversebridge_log("📨 #post opgeslagen in {$file}");
+    fediversebridge_log("#post opgeslagen in {$file}");
 
     $json = json_encode($activity, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $inboxes = fediversebridge_get_followers_inboxes($username);
     foreach ($inboxes as $inbox_url) {
         $headers = fediversebridge_sign_request($inbox_url, $json, $username);
         if (!$headers) {
-            fediversebridge_log("❌ Geen headers gegenereerd – {$inbox_url} overgeslagen");
+            fediversebridge_log("Geen headers gegenereerd – {$inbox_url} overgeslagen");
             continue;
         }
 
@@ -204,11 +206,11 @@ function fediversebridge_wall_post_to_fediverse($callback, $type, $params) {
         curl_exec($ch); // Response niet opgeslagen
         curl_close($ch);
 
-        fediversebridge_log("📤 Verzonden naar {$inbox_url}");
+        fediversebridge_log("Verzonden naar {$inbox_url}");
     }
 }
 
-// 🗑️ Verwijder fediversepost bij OSSN delete
+// Verwijder fediversepost bij OSSN delete
 function fediversebridge_on_post_delete($callback, $type, $guid) {
     $post = ossn_get_object($guid);
     if (!$post || $post->type !== 'user') return;
@@ -223,7 +225,7 @@ function fediversebridge_on_post_delete($callback, $type, $guid) {
         $activity = json_decode(file_get_contents($file), true);
         $object_id = $activity['object']['id'] ?? null;
         unlink($file);
-        fediversebridge_log("🗑️ Post verwijderd – outboxbestand {$file} gewist");
+        fediversebridge_log("Post verwijderd – outboxbestand {$file} gewist");
 
         if ($object_id) {
             $delete = [
@@ -248,11 +250,11 @@ function fediversebridge_on_post_delete($callback, $type, $guid) {
                 curl_exec($ch);
                 curl_close($ch);
 
-                fediversebridge_log("📤 DELETE verzonden naar {$inbox_url}");
+                fediversebridge_log("DELETE verzonden naar {$inbox_url}");
             }
         }
     }
 }
 
-// 🚀 Component init registreren
+// Component init registreren
 ossn_register_callback('ossn', 'init', 'fediversebridge_init');
