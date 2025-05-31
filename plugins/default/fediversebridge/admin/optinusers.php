@@ -1,17 +1,15 @@
 <?php
 /**
  * plugins/default/fediversebridge/admin/optinusers.php
- * 🇳🇱 Adminpagina: overzicht van gebruikers die Fediverse-opt-in hebben ingeschakeld
- * 🇬🇧 Admin page: overview of users who have enabled Fediverse opt-in
+ * Admin page: overview of users who have enabled Fediverse opt-in
  *
- * Gemaakt door Eric Redegeld – nlsociaal.nl
+ * Created by Eric Redegeld – nlsociaal.nl
  */
 
 $optins_dir = ossn_get_userdata('components/FediverseBridge/optin/');
 $users = [];
 
-// 📁 Verzamel alle gebruikers met een opt-in JSON-bestand
-// 📁 Collect all users who have an opt-in JSON file
+// Collect all users who have an opt-in JSON file
 if (is_dir($optins_dir)) {
     foreach (glob($optins_dir . '*.json') as $file) {
         $username = basename($file, '.json');
@@ -22,13 +20,13 @@ if (is_dir($optins_dir)) {
     }
 }
 
-// 🖥️ Begin HTML-uitvoer / Start HTML output
+// Start HTML output
 $list = '<div class="fediverse-admin-optin">';
-$list .= '<h2>🔐 Fediverse Opt-in Gebruikers (' . count($users) . ')</h2>';
+$list .= '<h2>Fediverse Opt-in Users (' . count($users) . ')</h2>';
 
 if (!empty($users)) {
     $list .= "<table class='table ossn-admin-table'>";
-    $list .= "<thead><tr><th>Gebruikersnaam</th><th>Naam</th><th>Email</th><th>Profiel</th></tr></thead><tbody>";
+    $list .= "<thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Profile</th></tr></thead><tbody>";
 
     foreach ($users as $user) {
         $username     = htmlspecialchars($user->username, ENT_QUOTES, 'UTF-8');
@@ -40,13 +38,13 @@ if (!empty($users)) {
         $list .= "<td>@{$username}</td>";
         $list .= "<td>{$full_name}</td>";
         $list .= "<td>{$email}</td>";
-        $list .= "<td><a href='{$profile_url}' target='_blank'>Bekijk profiel</a></td>";
+        $list .= "<td><a href='{$profile_url}' target='_blank'>View Profile</a></td>";
         $list .= "</tr>";
     }
 
     $list .= "</tbody></table>";
 } else {
-    $list .= "<p>⚠️ Er zijn nog geen gebruikers die Fediverse-integratie hebben ingeschakeld.</p>";
+    $list .= "<p>No users have enabled Fediverse integration yet.</p>";
 }
 
 $list .= '</div>';
