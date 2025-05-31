@@ -1,8 +1,7 @@
 <?php
 /**
  * pages/admin/optinusers.php
- * 🇳🇱 Adminpagina loader voor Fediverse opt-in gebruikersoverzicht
- * 🇬🇧 Admin page loader for Fediverse opt-in user overview
+ * Admin page loader for the Fediverse opt-in user overview
  */
 
 if (!ossn_isAdminLoggedin()) {
@@ -10,8 +9,8 @@ if (!ossn_isAdminLoggedin()) {
     return;
 }
 
-// 🔄 Laad de admin view voor opt-in gebruikers
+// Load the admin view for opt-in users
 $content = ossn_plugin_view('fediversebridge/admin/optinusers');
 
-// 📄 Toon pagina met titel
+// Render the page with title
 echo ossn_view_page(ossn_print('fediversebridge:optinusers'), $content);
