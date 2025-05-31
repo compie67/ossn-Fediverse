@@ -1,51 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-OSSN Component XML Definition
-
-📦 Component: FediverseBridge
-👨‍💻 Author: Eric Redegeld
-🌐 Platform: nlsociaal.nl
-🧩 Purpose: Federated sharing of public wall posts with hashtags to the Fediverse via ActivityPub
-⚠️ Requires OSSN 6.6 or higher (for hooks, metadata, and Wall integration)
--->
-
 <component xmlns="http://www.opensource-socialnetwork.org/v/3.0">
-  <!-- Unique component ID -->
-  <id>FediverseBridge</id>
-
-  <!-- Display name in the OSSN admin panel -->
-  <name>Fediverse Bridge</name>
-
-  <!-- Description shown in admin -->
-  <description>
-    Publishes public hashtag posts from opted-in users to the Fediverse (e.g. Mastodon) via ActivityPub.
-  </description>
-
-  <!-- Version of the component -->
-  <version>1.0.1</version>
-
-  <!-- Author of the component -->
-  <author>Eric Redegeld</author>
-
-  <!-- License type -->
-  <license>GPLv2</license>
-
-  <!-- Minimum OSSN version required -->
-  <requires>
-    <type>ossn_version</type>
-    <version>6.6</version>
-  </requires>
-
-  <!-- Dependency: ContentSharing component must be enabled -->
-  <requires>
-    <type>ossn_component</type>
-    <name>ContentSharing</name>
-    <comparator>enabled</comparator>
-  </requires>
-
-  <!-- File executed on component enable -->
-  <enable>enable.php</enable>
-
-  <!-- Optional: Cleanup script executed on component disable -->
-  <disable>disable.php</disable>
+    <name>Fediverse Bridge</name>
+    <id>FediverseBridge</id>
+    <author>Eric Redegeld</author>
+    <description>Publishes public hashtag posts from opted-in users to the Fediverse (e.g. Mastodon) via ActivityPub.</description>
+    <license>GNU GENERAL PUBLIC LICENSE Version 2</license>
+    <author_url>https://github.com/compie67</author_url>
+    <license_url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt</license_url>
+    <version>1.0.1</version>
+	<requires>
+		<type>ossn_version</type>
+		<version>6.6</version>
+	</requires>
 </component>
