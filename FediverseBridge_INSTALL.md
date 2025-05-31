@@ -21,7 +21,7 @@ When activated, the module will automatically create required folders and keys f
 
 Edit your OSSN site's `.htaccess` file. Inside the `<IfModule mod_rewrite.c>` block, add the following line:
 
-RewriteRule ^.well-known/webfinger$ index.php?h=well-known&p=webfinger [QSA,L]
+RewriteRule ^\.well-known/webfinger$ index.php?h=well-known&p=webfinger [QSA,L]
 
 This rewrite rule is required so other Fediverse servers (such as Mastodon) can discover your users via WebFinger.
 
