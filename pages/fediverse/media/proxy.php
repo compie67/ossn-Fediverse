@@ -1,33 +1,27 @@
 <?php
 /**
- * 📦 Image Proxy for FediverseBridge
- * 🇳🇱 Toont veilige toegang tot OSSN wall-afbeeldingen via GUID en bestandsnaam
- * 🇬🇧 Secure image proxy for wall attachments using GUID and filename
- * 📂 Endpoint: /fediverse/media/proxy?guid=123&file=example.jpg
+ * Image Proxy for FediverseBridge
+ * Secure access to OSSN wall images via object GUID and filename
+ * Endpoint: /fediverse/media/proxy?guid=123&file=example.jpg
  */
 
-// 🔒 🇳🇱 Beveilig invoer
-// 🔒 🇬🇧 Sanitize input to prevent path traversal
+// Sanitize input to prevent path traversal
 $guid     = (int) input('guid');
 $filename = basename(input('file'));
 
 if (!$guid || !$filename) {
-    // ❌ 🇳🇱 Ongeldige invoer
-    // ❌ 🇬🇧 Invalid input
     header("HTTP/1.1 400 Bad Request");
-    exit('❌ Invalid request');
+    exit('Invalid request');
 }
 
-// 🔍 🇳🇱 Zoek het object en controleer type
-// 🔍 🇬🇧 Retrieve object and check type
+// Retrieve the object and ensure it is of type 'user'
 $object = ossn_get_object($guid);
 if (!$object || $object->type !== 'user') {
     header("HTTP/1.1 404 Not Found");
-    exit('❌ Object not found');
+    exit('Object not found');
 }
 
-// 📂 🇳🇱 Zoek paden naar mogelijke afbeeldingslocaties
-// 📂 🇬🇧 Look in both image and multiupload folders
+// Check common directories for uploaded wall images
 $search_dirs = [
     ossn_get_userdata("object/{$guid}/ossnwall/images/"),
     ossn_get_userdata("object/{$guid}/ossnwall/multiupload/")
@@ -42,15 +36,12 @@ foreach ($search_dirs as $dir) {
     }
 }
 
-// ❌ 🇳🇱 Bestand niet gevonden
-// ❌ 🇬🇧 File not found
 if (!$path || !file_exists($path)) {
     header("HTTP/1.1 404 Not Found");
-    exit('❌ File not found');
+    exit('File not found');
 }
 
-// 🖼️ 🇳🇱 Toon afbeelding
-// 🖼️ 🇬🇧 Output image file
+// Serve the image file
 $mime = mime_content_type($path);
 $size = filesize($path);
 
