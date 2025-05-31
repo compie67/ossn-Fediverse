@@ -14,7 +14,7 @@ $user = $params['user'];
 $username = $user->username;
 $viewer = ossn_loggedin_user();
 
-// Access: only self or admin
+// Access control: only the user or admin
 if (!$viewer || ($viewer->guid !== $user->guid && !ossn_isAdminLoggedin())) {
     ossn_error_page();
 }
@@ -32,14 +32,14 @@ $domain         = parse_url(ossn_site_url(), PHP_URL_HOST);
 
 $optedin = file_exists($optin_file);
 
-// Form processing
+// Handle form submit
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $wilt_optin = input('fediverse_optin') === 'yes';
+    $wants_optin = input('fediverse_optin') === 'yes';
 
-    if ($wilt_optin) {
+    if ($wants_optin) {
         if (!is_dir(dirname($optin_file))) mkdir(dirname($optin_file), 0755, true);
 
-        // Key generation
+        // Generate keys if needed
         if (!file_exists($private_file)) {
             $res = openssl_pkey_new(['private_key_bits' => 2048]);
             openssl_pkey_export($res, $privout);
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'actor_url' => $actor_url
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        // First welcome post
+        // Create welcome post
         $first_file = "{$outbox_dir}/first.json";
         if (!file_exists($first_file)) {
             $now = date('c');
@@ -131,7 +131,7 @@ User GUID: <?php echo $user->guid; ?>
     </pre>
 
     <?php
-    // Likes and Replies
+    // Gather inbox activity
     $interactions = [];
 
     if (is_dir($inbox_dir)) {
