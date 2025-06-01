@@ -1,9 +1,8 @@
 <?php
 /**
  * plugins/default/fediversebridge/optin.php
- * Fediverse profile page with opt-in, replies, likes and followers
- *
- * Created by Eric Redegeld – nlsociaal.nl
+ * Fediverse opt-in profile page (followers, likes, reposts)
+ * Author: Eric Redegeld – nlsociaal.nl
  */
 
 if (!ossn_isLoggedIn()) {
@@ -14,12 +13,12 @@ $user     = $params['user'];
 $username = $user->username;
 $viewer   = ossn_loggedin_user();
 
-// Access control: only the user or admin
+// Only allow profile owner or admin
 if (!$viewer || ($viewer->guid !== $user->guid && !ossn_isAdminLoggedin())) {
     ossn_error_page();
 }
 
-// Paths and constants
+// File paths
 $base_path      = ossn_get_userdata("components/FediverseBridge");
 $optin_file     = "{$base_path}/optin/{$username}.json";
 $private_file   = "{$base_path}/private/{$username}.pem";
@@ -27,72 +26,95 @@ $public_file    = "{$base_path}/private/{$username}.pubkey";
 $outbox_dir     = "{$base_path}/outbox/{$username}/";
 $inbox_dir      = "{$base_path}/inbox/{$username}/";
 $followers_file = "{$base_path}/followers/{$username}.json";
-$actor_url      = ossn_site_url("fediverse/actor/{$username}");
 $domain         = parse_url(ossn_site_url(), PHP_URL_HOST);
-
-$optedin = file_exists($optin_file);
+$actor_url      = ossn_site_url("fediverse/actor/{$username}");
+$optedin        = file_exists($optin_file);
 
 // Handle opt-in form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $wants_optin = input('fediverse_optin') === 'yes';
 
-    if ($wants_optin) {
-        if (!is_dir(dirname($optin_file))) mkdir(dirname($optin_file), 0755, true);
-
-        if (!file_exists($private_file)) {
-            $res = openssl_pkey_new(['private_key_bits' => 2048]);
-            openssl_pkey_export($res, $privout);
-            file_put_contents($private_file, $privout);
-            $pubout = openssl_pkey_get_details($res);
-            file_put_contents($public_file, $pubout['key']);
+    if ($wants_optin && !$optedin) {
+        foreach ([dirname($optin_file), dirname($private_file), $outbox_dir] as $path) {
+            if (!is_dir($path)) mkdir($path, 0755, true);
         }
 
-        if (!is_dir($outbox_dir)) mkdir($outbox_dir, 0755, true);
+        $res = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        openssl_pkey_export($res, $privout);
+        file_put_contents($private_file, $privout);
+        $pubout = openssl_pkey_get_details($res);
+        file_put_contents($public_file, $pubout['key']);
 
         file_put_contents($optin_file, json_encode([
             'enabled' => true,
-            'actor_url' => $actor_url
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            'actor_url' => $actor_url,
+        ]));
 
         $now = date('c');
         $note = [
-            '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id' => "{$actor_url}#note-first",
-            'type' => 'Note',
+            '@context'     => 'https://www.w3.org/ns/activitystreams',
+            'id'           => ossn_site_url("fediverse/outbox/{$username}#note-first"),
+            'type'         => 'Note',
             'attributedTo' => $actor_url,
-            'to' => ['https://www.w3.org/ns/activitystreams#Public'],
-            'cc' => [$actor_url, "{$actor_url}/followers"],
-            'content' => "Hello Fediverse! I am {$username} on {$domain}.",
-            'published' => $now,
-            'url' => "{$actor_url}#note-first"
+            'to'           => ['https://www.w3.org/ns/activitystreams#Public'],
+            'content'      => "Hello Fediverse! I am {$username} on {$domain}.",
+            'published'    => $now,
         ];
 
         $activity = [
-            '@context' => 'https://www.w3.org/ns/activitystreams',
-            'id' => "{$actor_url}#activity-first",
-            'type' => 'Create',
-            'actor' => $actor_url,
-            'published' => $now,
-            'to' => ['https://www.w3.org/ns/activitystreams#Public'],
-            'object' => $note
+            '@context'   => 'https://www.w3.org/ns/activitystreams',
+            'id'         => ossn_site_url("fediverse/outbox/{$username}#activity-first"),
+            'type'       => 'Create',
+            'actor'      => $actor_url,
+            'published'  => $now,
+            'to'         => ['https://www.w3.org/ns/activitystreams#Public'],
+            'object'     => $note
         ];
 
         file_put_contents("{$outbox_dir}/first.json", json_encode($activity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-        fediversebridge_log("Opt-in activated for {$username}");
-        ossn_trigger_message("Fediverse participation enabled", 'success');
-    } else {
-        foreach ([$optin_file, $private_file, $public_file] as $f) {
-            if (file_exists($f)) unlink($f);
-        }
+        ossn_trigger_message("Fediverse participation enabled for {$username}", 'success');
+    } elseif (!$wants_optin && $optedin) {
+        @unlink($optin_file);
+        @unlink($private_file);
+        @unlink($public_file);
         if (is_dir($outbox_dir)) {
             array_map('unlink', glob("{$outbox_dir}/*.json"));
-            rmdir($outbox_dir);
+            @rmdir($outbox_dir);
         }
-        fediversebridge_log("Opt-in disabled for {$username}");
         ossn_trigger_message("Fediverse participation disabled", 'error');
     }
 
     redirect(REF);
+}
+
+// Followers
+$followers = [];
+if (file_exists($followers_file)) {
+    $followers = json_decode(file_get_contents($followers_file), true) ?: [];
+}
+
+// Likes & reposts (announces)
+$likes = [];
+$announces = [];
+$replies = []; // Placeholder
+
+if (is_dir($inbox_dir)) {
+    foreach (glob("{$inbox_dir}/*.json") as $file) {
+        $json = json_decode(file_get_contents($file), true);
+        if ($json['type'] === 'Like') {
+            $likes[] = $json;
+        } elseif ($json['type'] === 'Announce') {
+            $announces[] = $json;
+        }
+        // To enable replies, uncomment and improve below:
+        // elseif ($json['type'] === 'Create' && isset($json['object']['inReplyTo'])) {
+        //     $replies[] = [
+        //         'actor'   => $json['actor'],
+        //         'content' => $json['object']['content'] ?? '',
+        //         'object'  => $json['object']['inReplyTo'],
+        //     ];
+        // }
+    }
 }
 ?>
 
@@ -100,84 +122,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h3>Fediverse</h3>
 
     <?php if ($optedin): ?>
-        <p class="ossn-message-success">✅ You are currently participating in the Fediverse. Other users can follow you and receive your posts.</p>
+        <p class="ossn-message-success">You are currently participating in the Fediverse.</p>
     <?php else: ?>
-        <p class="ossn-message-error">❌ You are not participating in the Fediverse.</p>
+        <p class="ossn-message-error">You are not participating in the Fediverse.</p>
     <?php endif; ?>
 
     <form method="post">
-        <input type="checkbox" id="fediverse_optin" name="fediverse_optin" value="yes" <?php if ($optedin) echo 'checked'; ?>>
-        <label for="fediverse_optin">I want to participate in the Fediverse</label>
-        <br><br>
+        <label>
+            <input type="checkbox" name="fediverse_optin" value="yes" <?php if ($optedin) echo 'checked'; ?> />
+            Enable Fediverse participation
+        </label><br><br>
         <input type="submit" class="btn btn-primary" value="Save" />
     </form>
 
-    <div style="background: #f0f8ff; padding: 15px; border: 1px solid #a1c4e7; margin-top: 20px; border-radius: 5px;">
-        <h4>🔗 Your Fediverse identity</h4>
-        <p><strong>@<?php echo $username . '@' . $domain; ?></strong></p>
-        <p>Share this link to let others follow you:</p>
-        <p><a href="<?php echo $actor_url; ?>" target="_blank"><?php echo $actor_url; ?></a></p>
-    </div>
+    <?php if ($optedin): ?>
+        <div style="margin-top: 25px; background: #f0f8ff; padding: 15px; border: 1px solid #a1c4e7; border-radius: 5px;">
+            <h4>Your Fediverse Identity</h4>
+            <p><strong>@<?php echo $username . '@' . $domain; ?></strong></p>
+            <p>You can be followed via any Fediverse platform.</p>
+        </div>
 
-    <?php
-    // Gather inbox activity
-    $interactions = [];
+        <h4 style="margin-top: 25px;">Followers</h4>
+        <?php if ($followers): ?>
+            <ul>
+                <?php foreach ($followers as $follower): ?>
+                    <li><a href="<?php echo htmlspecialchars($follower); ?>" target="_blank"><?php echo htmlspecialchars($follower); ?></a></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>No followers yet.</p>
+        <?php endif; ?>
 
-    if (is_dir($inbox_dir)) {
-        foreach (glob("{$inbox_dir}/*.json") as $file) {
-            $json = json_decode(file_get_contents($file), true);
-            if (!is_array($json)) continue;
+        <h4 style="margin-top: 25px;">Likes</h4>
+        <?php if ($likes): ?>
+            <ul>
+                <?php foreach ($likes as $like): ?>
+                    <li>
+                        <strong><?php echo htmlspecialchars($like['actor']); ?></strong> liked 
+                        <a href="<?php echo htmlspecialchars($like['object']); ?>" target="_blank"><?php echo htmlspecialchars($like['object']); ?></a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>No likes yet.</p>
+        <?php endif; ?>
 
-            $type   = $json['type'] ?? '';
-            $actor  = $json['actor'] ?? 'unknown';
+        <h4 style="margin-top: 25px;">Reposts</h4>
+        <?php if ($announces): ?>
+            <ul>
+                <?php foreach ($announces as $announce): ?>
+                    <li>
+                        <strong><?php echo htmlspecialchars($announce['actor']); ?></strong> reposted 
+                        <a href="<?php echo htmlspecialchars($announce['object']); ?>" target="_blank"><?php echo htmlspecialchars($announce['object']); ?></a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>No reposts yet.</p>
+        <?php endif; ?>
 
-            if ($type === 'Like' && isset($json['object'])) {
-                $interactions[] = [
-                    'type' => 'Like',
-                    'author' => $actor,
-                    'target' => $json['object'],
-                    'content' => '',
-                    'time' => $json['published'] ?? ''
-                ];
-            }
-
-            if ($type === 'Create' && isset($json['object']['type']) && $json['object']['type'] === 'Note') {
-                $interactions[] = [
-                    'type' => isset($json['object']['inReplyTo']) ? 'Reply' : 'Post',
-                    'author' => $actor,
-                    'target' => $json['object']['inReplyTo'] ?? '',
-                    'content' => strip_tags($json['object']['content'] ?? ''),
-                    'time' => $json['published'] ?? ''
-                ];
-            }
-        }
-    }
-
-    if (!empty($interactions)) {
-        echo "<h4>💬 Activity</h4><table class='table'>";
-        echo "<thead><tr><th>Type</th><th>From</th><th>To</th><th>Content</th></tr></thead><tbody>";
-        foreach ($interactions as $row) {
-            echo "<tr>";
-            echo "<td>{$row['type']}</td>";
-            echo "<td><a href='{$row['author']}' target='_blank'>" . htmlspecialchars($row['author']) . "</a></td>";
-            echo "<td><a href='{$row['target']}' target='_blank'>" . htmlspecialchars(basename($row['target'])) . "</a></td>";
-            echo "<td>" . htmlspecialchars($row['content']) . "</td>";
-            echo "</tr>";
-        }
-        echo "</tbody></table>";
-    }
-
-    // Show followers
-    if (file_exists($followers_file)) {
-        $followers = json_decode(file_get_contents($followers_file), true);
-        if (is_array($followers) && !empty($followers)) {
-            echo "<h4>👥 Followers</h4><ul>";
-            foreach ($followers as $f) {
-                $safe = htmlspecialchars($f);
-                echo "<li><a href='{$safe}' target='_blank'>{$safe}</a></li>";
-            }
-            echo "</ul>";
-        }
-    }
-    ?>
+        <!--
+        <h4 style="margin-top: 25px;">Replies</h4>
+        <?php if ($replies): ?>
+            <ul>
+                <?php foreach ($replies as $reply): ?>
+                    <li>
+                        <strong><?php echo htmlspecialchars($reply['actor']); ?></strong>:<br/>
+                        <?php echo nl2br(htmlspecialchars($reply['content'])); ?><br/>
+                        <a href="<?php echo htmlspecialchars($reply['object']); ?>" target="_blank">View original post</a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>No replies yet.</p>
+        <?php endif; ?>
+        -->
+    <?php endif; ?>
 </div>
