@@ -10,7 +10,7 @@
     <version>1.0.1</version>
     <requires>
         <type>ossn_version</type>
-        <version>6.6</version>
+        <version>7.0</version>
     </requires>
     <requires>
         <type>ossn_component</type>
