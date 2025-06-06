@@ -2,65 +2,70 @@
 /**
  * helpers/followers.php
  * Created by Eric Redegeld for nlsociaal.nl
- *
- * Provides helper functions to retrieve the inbox URLs of followers
- * Only active (opt-in) users are federated
  */
 
 /**
  * Fetches the inbox URLs of all Fediverse followers for a given OSSN user
  *
  * @param string $username OSSN username
- * @return array Inbox URLs of followers or fallback list
+ * @return array Inbox URLs or fallback list
  */
 function fediversebridge_get_followers_inboxes($username) {
     $base = ossn_get_userdata("components/FediverseBridge");
-    $optin_file = "{$base}/optin/{$username}.json";
 
-    // User has not opted in → do not federate
+    // Check if user has opted in
+    $optin_file = "{$base}/optin/{$username}.json";
     if (!file_exists($optin_file)) {
-        if (defined('FEDIVERSEBRIDGE_DEBUG') && FEDIVERSEBRIDGE_DEBUG) {
-            fediversebridge_log("⛔️ No opt-in file for {$username}, post will not be federated.");
-        }
+        fediversebridge_log(ossn_print('fediversebridge:log:nooptinfile', [$username]));
         return [];
     }
 
     $followers_file = "{$base}/followers/{$username}.json";
 
-    // No followers file → fallback to known public inboxes
+    // No followers.json → use fallback inboxes
     if (!file_exists($followers_file)) {
-        if (defined('FEDIVERSEBRIDGE_DEBUG') && FEDIVERSEBRIDGE_DEBUG) {
-            fediversebridge_log("ℹ️ No followers.json for {$username}, using fallback inboxes.");
-        }
-        return fediversebridge_fallback_inboxes();
+        fediversebridge_log(ossn_print('fediversebridge:log:nofollowersfile', [$username]));
+        return [
+            'https://mastodon.social/inbox',
+            'https://mastodon.nl/inbox',
+            'https://mastodon.education/inbox',
+            'https://pleroma.envs.net/inbox',
+            'https://diaspod.org/inbox'
+        ];
     }
 
     $followers = json_decode(file_get_contents($followers_file), true);
     if (!is_array($followers)) {
-        if (defined('FEDIVERSEBRIDGE_DEBUG') && FEDIVERSEBRIDGE_DEBUG) {
-            fediversebridge_log("⚠️ Invalid followers.json for {$username}");
-        }
+        fediversebridge_log(ossn_print('fediversebridge:log:invalidfollowersfile', [$username]));
         return [];
     }
 
-    // Convert each actor URL to its inbox endpoint
-    return array_map(function($actor_url) {
-        return rtrim($actor_url, '/') . '/inbox';
-    }, $followers);
+    $inboxes = [];
+    foreach ($followers as $actor_url) {
+        $actor_url = rtrim($actor_url, '/');
+        $inboxes[] = "{$actor_url}/inbox";
+    }
+
+    return $inboxes;
 }
 
 /**
- * Returns fallback inboxes when no valid followers list is found
+ * Checks if a given actor is a known follower of the user
  *
- * @return array
+ * @param string $username OSSN username
+ * @param string $actor Full actor URL (e.g., https://mastodon.social/users/test)
+ * @return bool true if actor is listed
  */
-function fediversebridge_fallback_inboxes() {
-    return [
-        'https://mastodon.social/inbox',
-        'https://mastodon.nl/inbox',
-        'https://mastodon.education/inbox',
-        'https://pleroma.envs.net/inbox',
-        'https://diaspod.org/inbox',
-        'https://iviv.hu/inbox'
-    ];
+function fediversebridge_actor_is_follower($username, $actor) {
+    $followers_file = ossn_get_userdata("components/FediverseBridge/followers/{$username}.json");
+    if (!file_exists($followers_file)) {
+        return false;
+    }
+
+    $followers = json_decode(file_get_contents($followers_file), true);
+    if (!is_array($followers)) {
+        return false;
+    }
+
+    return in_array($actor, $followers);
 }
