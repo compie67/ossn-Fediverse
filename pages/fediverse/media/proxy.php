@@ -1,27 +1,27 @@
 <?php
 /**
- * Image Proxy for FediverseBridge
- * Secure access to OSSN wall images via object GUID and filename
- * Endpoint: /fediverse/media/proxy?guid=123&file=example.jpg
+ *  Veilige afbeeldingsproxy voor Fediverse
+ * 🇳🇱 Toont OSSN-wall afbeeldingen via veilige link (1:1 per bestand)
+ *  /fediverse/media/proxy?guid=123&file=bestandsnaam.jpg
  */
 
-// Sanitize input to prevent path traversal
-$guid     = (int) input('guid');
-$filename = basename(input('file'));
+$guid = (int) input('guid');
+$filename = basename(input('file')); // beveiliging tegen padmanipulatie
 
 if (!$guid || !$filename) {
+    fediversebridge_log("proxy.php – GUID of bestand ontbreekt");
     header("HTTP/1.1 400 Bad Request");
-    exit('Invalid request');
+    exit('Ongeldige aanvraag');
 }
 
-// Retrieve the object and ensure it is of type 'user'
 $object = ossn_get_object($guid);
 if (!$object || $object->type !== 'user') {
+    fediversebridge_log("proxy.php – Ongeldig object voor GUID {$guid}");
     header("HTTP/1.1 404 Not Found");
-    exit('Object not found');
+    exit('Object niet gevonden');
 }
 
-// Check common directories for uploaded wall images
+// 🔍 Zoek in zowel images/ als multiupload/
 $search_dirs = [
     ossn_get_userdata("object/{$guid}/ossnwall/images/"),
     ossn_get_userdata("object/{$guid}/ossnwall/multiupload/")
@@ -37,16 +37,18 @@ foreach ($search_dirs as $dir) {
 }
 
 if (!$path || !file_exists($path)) {
+    fediversebridge_log("proxy.php – Bestand niet gevonden: {$filename} in object {$guid}");
     header("HTTP/1.1 404 Not Found");
-    exit('File not found');
+    exit('❌ Bestand niet gevonden');
 }
 
-// Serve the image file
 $mime = mime_content_type($path);
 $size = filesize($path);
 
+fediversebridge_log("🖼️ proxy.php – Toont {$filename} ({$mime}, {$size} bytes) uit object {$guid}");
+
 header("Content-Type: {$mime}");
 header("Content-Length: {$size}");
-header("Cache-Control: public, max-age=604800"); // 7 days
+header("Cache-Control: public, max-age=604800");
 readfile($path);
 exit;
