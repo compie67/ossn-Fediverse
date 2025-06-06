@@ -26,7 +26,7 @@ DirectoryIndex index.php
 	deny from all
 </FilesMatch>
 
-#Disallow CLI and CRON script from browser
+# Disallow CLI and CRON script from browser
 RedirectMatch 404 ^/system/handlers/cli$
 RedirectMatch 404 ^/system/handlers/cron$
 
@@ -44,29 +44,30 @@ RedirectMatch 404 ^/system/handlers/cron$
 </FilesMatch>
 
 <IfModule mod_rewrite.c>
-#SetEnv HTTP_MOD_REWRITE 1
 RewriteEngine on
 
-# ✅ Correcte WebFinger Rewrite naar OSSN-style h/p parameters
+	# ✅ Correcte WebFinger Rewrite naar OSSN-style h/p parameters
 	RewriteRule ^\.well-known/webfinger$ index.php?h=well-known&p=webfinger [QSA,L]
 
+	# 🔒 Fediverse inbox POST endpoint (ActivityPub)
+	RewriteCond %{REQUEST_METHOD} POST
+	RewriteRule ^fediverse/inbox/([A-Za-z0-9\-_]+)$ index.php?h=fediverse&p=inbox/$1 [QSA,L]
 
+	RewriteRule ^rewrite.php$ installation/tests/apache_rewrite.php [L]
 
-RewriteRule ^rewrite.php$ installation/tests/apache_rewrite.php [L]
+	RewriteRule ^action\/([A-Za-z0-9\_\-\/]+)$ system/handlers/actions.php?action=$1&%{QUERY_STRING} [L]
 
-RewriteRule ^action\/([A-Za-z0-9\_\-\/]+)$ system/handlers/actions.php?action=$1&%{QUERY_STRING} [L]
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteRule ^([A-Za-z0-9\_\-]+)$ index.php?h=$1 [QSA,L]
 
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([A-Za-z0-9\_\-]+)$ index.php?h=$1 [QSA,L]
-
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([A-Za-z0-9\_\-]+)\/(.*)$ index.php?h=$1&p=$2 [QSA,L]
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteRule ^([A-Za-z0-9\_\-]+)\/(.*)$ index.php?h=$1&p=$2 [QSA,L]
 
 </IfModule>
 
-#https://github.com/nextcloud/server/issues/26569
+# https://github.com/nextcloud/server/issues/26569
 <IfModule mod_php.c>
 	php_value memory_limit 512M
 	php_value register_globals 0
