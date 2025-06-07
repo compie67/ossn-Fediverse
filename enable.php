@@ -110,3 +110,4 @@ file_put_contents($log_file, date('c') . ' ' . ossn_print('fediversebridge:enabl
 
 // Afsluiting
 file_put_contents($log_file, date('c') . ' ' . ossn_print('fediversebridge:enable:log:install:done') . "\n", FILE_APPEND);
+
