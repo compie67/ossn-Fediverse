@@ -10,6 +10,9 @@ define('FEDIVERSEBRIDGE_DEBUG', true);
 require_once __DIR__ . '/helpers/followers.php';
 require_once __DIR__ . '/helpers/sign.php';
 require_once __DIR__ . '/helpers/fediversebridge_log.php';
+require_once __DIR__ . '/helpers/undo.php';
+
+
 
 // Debug logging
 function fediversebridge_log($msg) {
