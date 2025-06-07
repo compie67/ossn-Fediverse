@@ -20,6 +20,7 @@ ossn_register_languages('nl', array(
     'fediversebridge:optin:profile:disabled' => '❌ Je hebt Fediverse-integratie uitgeschakeld.',
     'fediversebridge:optin:profile:checkbox' => 'Ik wil deelnemen aan het Fediverse',
     'fediversebridge:optin:profile:save' => 'Opslaan',
+    'fediversebridge:optin:profile:sharetip' => 'Deel dit adres zodat anderen je kunnen volgen via Mastodon of andere Fediverse-platforms.',
 
     // 🔘 Knoppen
     'fediversebridge:optin:profile:enablebtn' => '✅ Inschakelen',
@@ -42,11 +43,14 @@ ossn_register_languages('nl', array(
     'fediversebridge:followers:title' => '👥 Volgers',
     'fediversebridge:reply:by' => '💬 van <strong>%s</strong> op <em>%s</em>',
     'fediversebridge:reply:inreplyto' => '↪️ Antwoord op:',
-    'fediversebridge:like:by' => '❤️ van <strong>%s</strong> op <code>%s</code> <em>%s</em>',
-    'fediversebridge:announce:by' => '🔁 door <strong>%s</strong> van <a href="%s">%s</a> <em>%s</em>',
+    'fediversebridge:reply:linktothread' => '🧵 Bekijk volledige thread',
+    'fediversebridge:reply:timestamp' => '🕒 %s',
 
     // 🧵 Thread UI
     'fediversebridge:thread:title' => '🧵 Thread voor post %s',
+    'fediversebridge:thread:collapse' => '➖ Verberg thread',
+    'fediversebridge:thread:expand' => '➕ Toon thread',
+
 
     // 🛠️ Debug info
     'fediversebridge:debug:title' => '[DEBUG]',
