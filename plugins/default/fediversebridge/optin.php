@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $guid = fediversebridge_extract_guid_from_note_url($object);
             $note = htmlspecialchars($object);
             $link = fediversebridge_note_to_public_post_url($guid);
-            echo "<li>❤️ <a href='{$note}' target='_blank'>{$note}</a> → <a href='{$link}' target='_blank'>Bekijk op nlsociaal.nl</a></li>";
+            echo "<li>❤️ <a href='{$note}' target='_blank'>{$note}</a> → <a href='{$link}' target='_blank'>" . ossn_print('fediversebridge:viewon', [$domain]) . "</a></li>";
         }
         echo "</ul>";
     }
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $guid = fediversebridge_extract_guid_from_note_url($object);
             $note = htmlspecialchars($object);
             $link = fediversebridge_note_to_public_post_url($guid);
-            echo "<li>🔁 <a href='{$note}' target='_blank'>{$note}</a> → <a href='{$link}' target='_blank'>Bekijk op nlsociaal.nl</a></li>";
+            echo "<li>🔁 <a href='{$note}' target='_blank'>{$note}</a> → <a href='{$link}' target='_blank'>" . ossn_print('fediversebridge:viewon', [$domain]) . "</a></li>";
         }
         echo "</ul>";
     }
