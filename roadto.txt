@@ -1,0 +1,46 @@
+📚 Sources Used for the FediverseBridge Module
+🧾 Technical Standards and Specifications
+ActivityPub Specification – W3C ActivityPub
+
+ActivityStreams 2.0 – W3C ActivityStreams
+
+WebFinger Specification – RFC 7033 – WebFinger
+
+HTTP Signatures Draft – IETF draft-cavage-http-signatures
+
+🧰 Open Source Implementations and Examples
+Mastodon source code – github.com/mastodon/mastodon
+
+GoToSocial – Lightweight ActivityPub server written in Go: github.com/superseriousbusiness/gotosocial
+
+Pleroma / Akkoma – For inbox implementation and compatibility testing
+
+Bridgy Fed – Inspiration for opt-in-based federation logic: github.com/snarfed/bridgy-fed
+
+🧪 Test Tools and Utilities
+ActivityPub Test Tool – https://test.activitypub.dev/
+
+ActivityPub Rocks Validator – https://activitypub.rocks/
+
+cURL & Postman – For manual HTTP signature verification and inbox debugging
+
+⚙️ OSSN and PHP-Specific References
+OSSN Developer Wiki – OSSN Development Guide
+
+PHP OpenSSL Documentation – For RSA-based signing: php.net/manual/en/book.openssl.php
+
+Alternative HTTP Signature libraries (e.g. php-http-signature) – Considered but replaced with native implementation for better control
+
+🧾 Custom Logic and Internal Resources
+fediverse.log – Internal logging system for federation diagnostics
+
+Outbox & Inbox JSON files – Used for storing posts, replies, likes, and announces
+
+User Opt-in JSON files – Stores whether a user agreed to federate their content
+
+🌐 Live Network and Testing Instances
+mastodon.social – For testing likes, announces, follows
+
+mastodon.education, mastodon.nl – For testing replies and inbox requests
+
+shadow.nlsociaal.nl – Main testbed environment for module development
