@@ -85,90 +85,11 @@ Backup:
 Create a backup copy of the current .htaccess file in the root of your OSSN installation.
 
 Replace:
-Replace the entire content of the .htaccess file with the content provided below.
+Replace the entire content of the present .htaccess file with the content provided.
 
 Verify:
 After replacement, verify that the website and the FediverseBridge module work correctly.
-restart apache 
+restart apache!!!
 
 
-
-# v6.5.0.0
-# Open Source Social Network
-#
-# @package   .htaccess.ossn
-# @author    OSSN Core Team <info@opensource-socialnetwork.org>
-# @copyright (c) Engr. Syed Arsalan Hussain Shah (OpenTeknik LLC)
-# @license   OPEN SOURCE SOCIAL NETWORK LICENSE https://opensource-socialnetwork.org/licence 
-# @link      https://www.opensource-socialnetwork.org 
-
-Options -Indexes
-Options +SymlinksIfOwnerMatch
-DirectoryIndex index.php
-
-<Files "error_log">
-	order allow,deny
-	deny from all
-</Files>
-
-<Files ".user.ini">
-	order allow,deny
-	deny from all
-</Files>
-
-<FilesMatch "(nginx|htaccess).dist">
-	order allow,deny
-	deny from all
-</FilesMatch>
-
-# Disallow CLI and CRON script from browser
-RedirectMatch 404 ^/system/handlers/cli$
-RedirectMatch 404 ^/system/handlers/cron$
-
-<IfModule mod_mime.c>
-    AddType image/vnd.microsoft.icon .ico
-</IfModule>
-
-<IfModule mod_expires.c>
-	ExpiresActive On
-	ExpiresDefault "access plus 1 year"
-</IfModule>
-
-<FilesMatch "\.(jpg|jpeg|gif|png|mp3|flv|mov|avi|3pg|html|htm|swf|js|css|ico)$">
-	FileETag MTime Size
-</FilesMatch>
-
-<IfModule mod_rewrite.c>
-RewriteEngine on
-
-	# ✅ Correcte WebFinger Rewrite naar OSSN-style h/p parameters
-	RewriteRule ^\.well-known/webfinger$ index.php?h=well-known&p=webfinger [QSA,L]
-
-	# 🔒 Fediverse inbox POST endpoint (ActivityPub)
-	RewriteCond %{REQUEST_METHOD} POST
-	RewriteRule ^fediverse/inbox/([A-Za-z0-9\-_]+)$ index.php?h=fediverse&p=inbox/$1 [QSA,L]
-
-	RewriteRule ^rewrite.php$ installation/tests/apache_rewrite.php [L]
-
-	RewriteRule ^action\/([A-Za-z0-9\_\-\/]+)$ system/handlers/actions.php?action=$1&%{QUERY_STRING} [L]
-
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteRule ^([A-Za-z0-9\_\-]+)$ index.php?h=$1 [QSA,L]
-
-	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteRule ^([A-Za-z0-9\_\-]+)\/(.*)$ index.php?h=$1&p=$2 [QSA,L]
-
-</IfModule>
-
-# https://github.com/nextcloud/server/issues/26569
-<IfModule mod_php.c>
-	php_value memory_limit 512M
-	php_value register_globals 0
-	php_value post_max_size 105M
-	php_value upload_max_filesize 100M
-	php_value default_charset "UTF-8"
-	php_flag session.cookie_httponly on
-</IfModule>
 
