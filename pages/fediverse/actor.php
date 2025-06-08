@@ -15,7 +15,7 @@ if (!$username) {
 	exit;
 }
 
-//  Voor gewone browsers: redirect naar profielpagina
+// 👉 Voor gewone browsers: redirect naar profielpagina
 $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
 if (strpos($accept, 'application/activity+json') === false) {
 	header("Location: " . ossn_site_url("u/{$username}"));
@@ -32,6 +32,7 @@ if (!$user) {
 
 // URLs opbouwen
 $site         = ossn_site_url();
+$domain       = parse_url($site, PHP_URL_HOST);
 $actor_id     = "{$site}fediverse/actor/{$username}";
 $inbox        = "{$site}fediverse/inbox/{$username}";
 $outbox       = "{$site}fediverse/outbox/{$username}";
@@ -70,7 +71,7 @@ $actor = [
 	'type' => 'Person',
 	'preferredUsername' => $username,
 	'name' => trim("{$user->first_name} {$user->last_name}"),
-	'summary' => ossn_print('fediversebridge:actor:summary', [$username]),
+	'summary' => ossn_print('fediversebridge:actor:summary', [$username, $domain]),
 	'inbox' => $inbox,
 	'outbox' => $outbox,
 	'followers' => $followers,
