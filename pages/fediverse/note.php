@@ -7,17 +7,36 @@
 
 require_once ossn_route()->com . 'FediverseBridge/helpers/fediversebridge_log.php';
 
-header('Content-Type: application/activity+json');
-
 // URL-onderdelen ophalen
 $username = $GLOBALS['FediversePages'][1] ?? null;
 $guid     = (int) ($GLOBALS['FediversePages'][2] ?? 0);
+
+// 👉 Voor gewone browsers redirecten naar de originele OSSN-post
+$accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+if (strpos($accept, 'application/activity+json') === false) {
+	if ($guid > 0) {
+		header("Location: " . ossn_site_url("post/view/{$guid}"));
+		exit;
+	}
+}
+
+// Voor ActivityPub-clients: JSON teruggeven
+header('Content-Type: application/activity+json');
 
 fediversebridge_log("NOTE VIEW: {$username}/{$guid}");
 
 if (!$username || !$guid) {
 	http_response_code(400);
 	echo json_encode(['error' => ossn_print('fediversebridge:note:error:invalid')]);
+	exit;
+}
+
+// Opt-out check: bestaat optin-bestand nog?
+$optin_path = ossn_get_userdata("components/FediverseBridge/optin/{$username}.json");
+if (!file_exists($optin_path)) {
+	http_response_code(410); // Gone
+	echo json_encode(['error' => ossn_print('fediversebridge:note:error:optout')]);
+	fediversebridge_log("🛑 Gebruiker {$username} is opt-out – note {$guid} niet getoond");
 	exit;
 }
 
@@ -85,6 +104,6 @@ $note['replies'] = [
 	'items'      => $items,
 ];
 
-// Output
+// Output JSON
 echo json_encode($note, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 exit;
